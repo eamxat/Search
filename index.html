@@ -539,9 +539,15 @@
         btnCopy.textContent = 'Copiar';
 
         // FIX: Clipboard API moderna en lugar de execCommand obsoleto
-        btnCopy.onclick = async () => {
+        btnCopy.onclick = () => {
             try {
-                await navigator.clipboard.writeText(codigoText);
+                const tempInput = document.createElement("input");
+                tempInput.value = codigoText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempInput);
+
                 btnCopy.textContent = '¡Copiado!';
                 btnCopy.style.backgroundColor = 'var(--success)';
                 btnCopy.style.color = 'white';
@@ -808,7 +814,7 @@
                 collectionPawnsCard.style.display = 'block';
                 colPawns.forEach((pawnName) => {
                     const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_40`;
-                    createImageCard(pawnName, imgUrl, pawnName, collectionPawnsGrid, true);
+                    createImageCard(pawnName, imgUrl, `(hat#h#${pawnName})`, collectionPawnsGrid, true);
                 });
             } else {
                 collectionPawnsCard.style.display = 'none';
@@ -857,7 +863,7 @@
             } else {
                 pawns.forEach((pawnName) => {
                     const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_80`;
-                    createImageCard(pawnName, imgUrl, pawnName, grid, true);
+                    createImageCard(pawnName, imgUrl, `(hat#h#${pawnName})`, grid, true);
                 });
             }
             card.dataset.loaded = colName;
