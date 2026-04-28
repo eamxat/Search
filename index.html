@@ -418,10 +418,11 @@
             if (url.includes('_80')) {
                 LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
             } else if (url.includes('gs.xat.com')) {
-                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)[)]/i);
+                const match = decodeURIComponent(url).match(/p1(.+?)\)_40/);
                 if (match) {
                     const pawnName = match[1];
-                    const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase();
+                    const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase()
+                                       && pawnName.charAt(0) !== pawnName.charAt(0).toLowerCase();
                     if (isCapitalized) {
                         LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${pawnName.toLowerCase()})_40` });
                     } else {
@@ -450,32 +451,26 @@
 
         newImg.onerror = () => {
             clearTimeout(timeout);
-            if (url.includes('GetStrip8') && url.includes('p1') && url.includes('_80')) {
-                // GetStrip8 con p1_80 falló → intentar gs.xat.com con mayúscula
-                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
+            if (url.includes('gs.xat.com')) {
+                // Extraer nombre del peón de la URL
+                const match = decodeURIComponent(url).match(/p1(.+?)\)_40/);
                 if (match) {
                     const pawnName = match[1];
-                    const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
-                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40` });
-                } else {
-                    img.style.display = "none";
-                }
-            } else if (url.includes('_80') && !url.includes('p1')) {
-                // Fallback normal _80 → _40
-                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
-            } else if (url.includes('gs.xat.com')) {
-                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
-                if (match) {
-                    const pawnName = match[1];
-                    const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase();
+                    const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase()
+                                       && pawnName.charAt(0) !== pawnName.charAt(0).toLowerCase();
                     if (isCapitalized) {
+                        // Mayúscula falló → intentar minúscula
                         LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${pawnName.toLowerCase()})_40` });
                     } else {
+                        // Minúscula también falló → ocultar
                         img.style.display = "none";
                     }
                 } else {
                     img.style.display = "none";
                 }
+            } else if (url.includes('_80')) {
+                // Fallback normal GetStrip8: _80 → _40
+                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
             } else {
                 img.style.display = "none";
             }
@@ -802,12 +797,13 @@
                 collectionRequiredCard.style.display = 'none';
             }
 
-            // Peones de la colección — GetStrip8 primero (universal), gs.xat.com como fallback
+            // Peones de la colección — gs.xat.com Mayúscula → minúscula → ocultar
             const colPawns = Array.isArray(item.Collection.pawns) ? item.Collection.pawns : [];
             if (colPawns.length > 0) {
                 collectionPawnsCard.style.display = 'block';
                 colPawns.forEach((pawnName) => {
-                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_80`;
+                    const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
+                    const imgUrl = `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`;
                     createImageCard(pawnName, imgUrl, pawnName, collectionPawnsGrid, true);
                 });
             } else {
@@ -856,7 +852,8 @@
                 grid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">Sin peones disponibles</p>';
             } else {
                 pawns.forEach((pawnName) => {
-                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_80`;
+                    const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
+                    const imgUrl = `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`;
                     createImageCard(pawnName, imgUrl, pawnName, grid, true);
                 });
             }
