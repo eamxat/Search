@@ -418,7 +418,7 @@
             if (url.includes('_80')) {
                 LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
             } else if (url.includes('gs.xat.com')) {
-                const match = decodeURIComponent(url).match(/p1(.+?)\)_40/);
+                const match = decodeURIComponent(url).match(/p1([^)]+?)_40/);
                 if (match) {
                     const pawnName = match[1];
                     const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase()
@@ -453,7 +453,7 @@
             clearTimeout(timeout);
             if (url.includes('gs.xat.com')) {
                 // Extraer nombre del peón de la URL
-                const match = decodeURIComponent(url).match(/p1(.+?)\)_40/);
+                const match = decodeURIComponent(url).match(/p1([^)]+?)_40/);
                 if (match) {
                     const pawnName = match[1];
                     const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase()
