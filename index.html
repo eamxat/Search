@@ -589,6 +589,10 @@
         loader.style.display = 'block';
         content.style.display = 'none';
         errorState.style.display = 'none';
+        
+        // FIX: Ocultar y reiniciar la tarjeta de peones de la colección padre al buscar un nuevo poder
+        document.getElementById('parentCollectionPawnsCard').style.display = 'none';
+        document.getElementById('parentCollectionPawnsCard').dataset.loaded = '';
 
         // FIX: Limpiar cola pendiente de búsqueda anterior (evita race condition)
         LOAD_QUEUE = [];
