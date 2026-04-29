@@ -88,6 +88,41 @@
 
         .refresh-btn:hover { opacity: 1; }
 
+        .theme-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+            margin-left: 5px;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Dark Mode Styles */
+        [data-theme="dark"] {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --danger-bg: rgba(239, 68, 68, 0.2);
+            --danger-text: #fca5a5;
+            --info-bg: rgba(59, 130, 246, 0.2);
+            --info-text: #93c5fd;
+        }
+        [data-theme="dark"] th { background-color: #111827; }
+        [data-theme="dark"] tbody tr:hover { background-color: #111827; }
+        [data-theme="dark"] .code-input { background-color: #111827; color: var(--text-main); }
+        [data-theme="dark"] .code-group { background: var(--bg-card); }
+        [data-theme="dark"] .btn-action { background: var(--bg-card); }
+        [data-theme="dark"] .btn-action:hover { background-color: var(--bg-body); }
+        [data-theme="dark"] #cell-name { color: var(--text-main) !important; }
+        [data-theme="dark"] #cell-desc { color: var(--text-muted) !important; }
+        [data-theme="dark"] [style*="#854d0e"] { color: #fef08a !important; }
+        [data-theme="dark"] [style*="#fef9c3"] { background: #713f12 !important; }
+
         .card {
             background-color: var(--bg-card);
             border-radius: var(--radius-card);
@@ -272,7 +307,8 @@
         <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;">
         <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required>
         <button type="submit" class="btn-search">BUSCAR</button>
-        <button type="button" id="refreshBtn" class="refresh-btn">⟳</button>
+        <button type="button" id="refreshBtn" class="refresh-btn" title="Recargar imágenes">⟳</button>
+        <button type="button" id="themeBtn" class="theme-btn" title="Alternar modo oscuro">🌙</button>
     </form>
 
     <div id="loader" class="loader-container">
@@ -893,6 +929,28 @@
         e.preventDefault();
         const powerInput = document.getElementById('searchInput').value.trim();
         if (powerInput) fetchPowerData(powerInput);
+    });
+
+    // ─── Lógica del Modo Oscuro ──────────────────────────────────────────────
+    const themeBtn = document.getElementById('themeBtn');
+    const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeBtn.textContent = '☀️';
+    }
+
+    themeBtn.addEventListener('click', () => {
+        let theme = document.documentElement.getAttribute('data-theme');
+        if (theme === 'dark') {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeBtn.textContent = '🌙';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeBtn.textContent = '☀️';
+        }
     });
 
     // Refresh: solo recarga imágenes ya visibles, sin cache-buster en estáticas nuevas
