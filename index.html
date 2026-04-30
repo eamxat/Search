@@ -471,6 +471,14 @@
             </div>
         </div>
 
+        <!-- SECCIÓN STICKERS -->
+        <div class="card" id="stickersCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Stickers del power</h2>
+            </div>
+            <div id="stickersGrid" class="codes-grid"></div>
+        </div>
+
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">Smiles del power</h2>
@@ -730,11 +738,12 @@
         try {
             const safeName = sanitizePowerName(rawName);
 
-            const [powerRes, pawnsRes, collectionRes, allCollectionsRes] = await Promise.all([
+            const [powerRes, pawnsRes, collectionRes, allCollectionsRes, stickerRes] = await Promise.all([
                 fetch(`https://illuxat.com/api/power/${safeName}`),
                 fetch("https://api.xatblog.net/activepawns"),
                 fetch(`https://api.xatblog.net/collectionlist/${safeName}`),
-                fetch("https://api.xatblog.net/collectionlist")
+                fetch("https://api.xatblog.net/collectionlist"),
+                fetch(`https://api.xatblog.net/stickerlist/${safeName}`)
             ]);
 
             let data, power, isAce = false;
@@ -802,6 +811,14 @@
                 }
             }
 
+            let stickerList = [];
+            if (stickerRes.ok) {
+                const stickerData = await stickerRes.json();
+                if (stickerData.code === 200 && stickerData.power && Array.isArray(stickerData.power.sticker_list)) {
+                    stickerList = stickerData.power.sticker_list;
+                }
+            }
+
             const powerData = {
                 id:              getSafeValue(power.Id),
                 name:            getSafeValue(power.Name),
@@ -815,7 +832,8 @@
                 Pawns:           power.Pawns,
                 ActivePawnsList:    activePawnsList,
                 Collection:         collectionData,
-                ParentCollection:   parentCollection
+                ParentCollection:   parentCollection,
+                StickerList:        stickerList
             };
 
             await renderDashboard(powerData);
@@ -884,7 +902,16 @@
         tImg.className = 'sprite-image';
         tImg.loading = "eager";
         tImg.decoding = "sync";
+        tImg.style.cursor = 'pointer';
+        tImg.title = `Ver ${item.name} en la wiki de xat`;
+        tImg.addEventListener('click', () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank'));
         mainImageContainer.appendChild(tImg);
+        // Aro de enlace visual al hacer hover
+        mainImageContainer.style.cursor = 'pointer';
+        mainImageContainer.style.transition = 'transform 0.2s, opacity 0.2s';
+        mainImageContainer.onmouseenter = () => { mainImageContainer.style.transform = 'scale(1.1)'; mainImageContainer.style.opacity = '0.85'; };
+        mainImageContainer.onmouseleave = () => { mainImageContainer.style.transform = ''; mainImageContainer.style.opacity = ''; };
+        mainImageContainer.onclick = () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank');
         const primerSmiley = item.Smileys.length > 0 ? item.Smileys[0] : item.name;
         forceLoadImage(tImg, `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(primerSmiley)})_80`);
 
@@ -930,6 +957,19 @@
             });
         } else {
             hatsCard.style.display = 'none';
+        }
+
+        const stickersCard = document.getElementById("stickersCard");
+        const stickersGrid = document.getElementById("stickersGrid");
+        stickersGrid.innerHTML = '';
+        if (Array.isArray(item.StickerList) && item.StickerList.length > 0) {
+            stickersCard.style.display = 'block';
+            item.StickerList.forEach((stickerName) => {
+                const imgUrl = `https://gs.xat.com/h_s_${encodeURIComponent(item.name)}_${encodeURIComponent(stickerName)}_.png`;
+                createImageCard(stickerName, imgUrl, `(${item.name}.${stickerName})`, stickersGrid);
+            });
+        } else {
+            stickersCard.style.display = 'none';
         }
 
         document.getElementById('loader').style.display = 'none';
