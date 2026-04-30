@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Search Powers</title>
+    <title>Dashboard de Poderes Xat</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/Un8kz4J.png">
     <style>
         :root {
@@ -404,6 +404,21 @@
                 <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
             </div>
             <div id="freeSmileGrid" class="codes-grid"></div>
+            <style>
+                #freeSmileGrid .sprite-container {
+                    width: 80px !important;
+                    height: 80px !important;
+                    min-width: 80px !important;
+                    min-height: 80px !important;
+                }
+                #freeSmileGrid .sprite-image {
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: 80px !important;
+                    max-height: 80px !important;
+                    object-fit: contain !important;
+                }
+            </style>
         </div>
     </div>
 
@@ -569,6 +584,7 @@
             } else if (url.includes('gs.xat.com')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
+                    // Peones: _80→_40
                     const pawnName = match[1];
                     const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase();
                     if (isCapitalized) {
@@ -576,6 +592,9 @@
                     } else {
                         LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${pawnName.toLowerCase()})_40`, onLoad, onFail });
                     }
+                } else if (url.includes('_80')) {
+                    // Smile _80 falló → intentar _40
+                    LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
                 }
@@ -686,6 +705,14 @@
 
     // ─── Fetch principal ─────────────────────────────────────────────────────
     async function fetchPowerData(rawName) {
+        // Cerrar panel de smiles gratuitas siempre que se haga una búsqueda
+        const _fp = document.getElementById('freeSmilePanel');
+        const _fb = document.getElementById('freeSmileBtn');
+        if (_fp && _fp.style.display !== 'none') {
+            _fp.style.display = 'none';
+            if (_fb) { _fb.style.opacity = '0.7'; _fb.style.transform = ''; }
+        }
+
         const loader       = document.getElementById('loader');
         const content      = document.getElementById('dashboardContent');
         const errorState   = document.getElementById('errorState');
@@ -710,12 +737,32 @@
                 fetch("https://api.xatblog.net/collectionlist")
             ]);
 
-            if (!powerRes.ok) throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
+            let data, power, isAce = false;
 
-            const data = await powerRes.json();
-            if (data.code !== 200) throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
+            if (!powerRes.ok) {
+                // Intentar como ACE
+                const acesRes = await fetch(`https://illuxat.com/api/aces/${safeName}`);
+                if (!acesRes.ok) throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
+                const acesData = await acesRes.json();
+                if (acesData.code !== 200) throw new Error(`Error ${acesData.code}: Poder no encontrado o API falló.`);
+                data  = acesData;
+                isAce = true;
+            } else {
+                data = await powerRes.json();
+                if (data.code !== 200) {
+                    // También intentar como ACE si power da error
+                    const acesRes2 = await fetch(`https://illuxat.com/api/aces/${safeName}`);
+                    if (acesRes2.ok) {
+                        const acesData2 = await acesRes2.json();
+                        if (acesData2.code === 200) { data = acesData2; isAce = true; }
+                        else throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
+                    } else {
+                        throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
+                    }
+                }
+            }
 
-            const power = data.data;
+            power = data.data;
 
             let activePawnsList = [];
             if (pawnsRes.ok) {
@@ -758,10 +805,10 @@
             const powerData = {
                 id:              getSafeValue(power.Id),
                 name:            getSafeValue(power.Name),
-                status:          getSafeValue(power.Status),
-                storeStatus:     getSafeValue(power.StoreStatus),
+                status:          isAce ? getSafeValue(power.Duration) : getSafeValue(power.Status),
+                storeStatus:     isAce ? 'ACE' : getSafeValue(power.StoreStatus),
                 priceStore:      getSafeValue(power.Prices?.store),
-                priceTrade:      getSafeValue(power.Prices?.xats),
+                priceTrade:      isAce ? 'N/A' : getSafeValue(power.Prices?.xats),
                 description:     getSafeValue(power.Descriptions?.shortDescription),
                 Smileys:         Array.isArray(power.Smileys) ? power.Smileys : [],
                 Hats:            power.Hats,
@@ -1398,17 +1445,10 @@
                     group.appendChild(btnCopy);
                     grid.appendChild(group);
 
-                    // Encolar con onLoad: si la imagen final es ≤40px mostrarla a tamaño real
+                    // Encolar: intentar gs.xat.com _80, fallback a _40
                     LOAD_QUEUE.push({
                         img,
-                        url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_80`,
-                        onLoad: () => {
-                            if (img.naturalWidth > 0 && img.naturalWidth <= 40) {
-                                img.style.width     = img.naturalWidth + 'px';
-                                img.style.height    = img.naturalHeight + 'px';
-                                img.style.objectFit = 'none';
-                            }
-                        }
+                        url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`
                     });
                     processQueue();
                 });
