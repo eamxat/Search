@@ -46,9 +46,16 @@
             margin-bottom: 30px;
         }
 
-        .search-input {
+        .search-input-wrapper {
+            position: relative;
             width: 100%;
             max-width: 400px;
+            z-index: 100;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 100%;
             padding: 12px 20px;
             border: 2px solid var(--border-color);
             border-radius: var(--radius-btn);
@@ -88,6 +95,52 @@
 
         .refresh-btn:hover { opacity: 1; }
 
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-card);
+            border-radius: 0 0 var(--radius-btn) var(--radius-btn);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            transition: var(--transition);
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background-color: var(--bg-body);
+        }
+
+        .autocomplete-img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            background: #f8fafc;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
         .theme-btn {
             background: transparent;
             border: none;
@@ -122,6 +175,10 @@
         [data-theme="dark"] #cell-desc { color: var(--text-muted) !important; }
         [data-theme="dark"] [style*="#854d0e"] { color: #fef08a !important; }
         [data-theme="dark"] [style*="#fef9c3"] { background: #713f12 !important; }
+        [data-theme="dark"] .autocomplete-items { background-color: var(--bg-card); border-color: var(--border-color); }
+        [data-theme="dark"] .autocomplete-item { color: var(--text-main); border-bottom-color: var(--border-color); }
+        [data-theme="dark"] .autocomplete-item:hover { background-color: var(--bg-body); }
+        [data-theme="dark"] .autocomplete-img { background-color: var(--bg-body); }
 
         .card {
             background-color: var(--bg-card);
@@ -298,6 +355,24 @@
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
+
+        /* Badge especial para colección en autocomplete */
+        .autocomplete-badge-col {
+            font-size: 9px;
+            font-weight: 800;
+            background: #fef9c3;
+            color: #854d0e;
+            border-radius: 9999px;
+            padding: 1px 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        [data-theme="dark"] .autocomplete-badge-col {
+            background: #713f12;
+            color: #fef08a;
+        }
     </style>
 </head>
 <body>
@@ -305,7 +380,10 @@
 
     <form id="searchForm" class="search-container">
         <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;">
-        <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required>
+        <div class="search-input-wrapper">
+            <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required autocomplete="off">
+            <div id="autocompleteList" class="autocomplete-items"></div>
+        </div>
         <button type="submit" class="btn-search">BUSCAR</button>
         <button type="button" id="refreshBtn" class="refresh-btn" title="Recargar imágenes">⟳</button>
         <button type="button" id="themeBtn" class="theme-btn" title="Alternar modo oscuro">🌙</button>
@@ -437,7 +515,7 @@
         if (activeLoads >= MAX_CONCURRENT || LOAD_QUEUE.length === 0) return;
         const job = LOAD_QUEUE.shift();
         activeLoads++;
-        const { img, url } = job;
+        const { img, url, onLoad, onFail } = job;
         img.style.opacity = "0";
         img.style.visibility = "hidden";
         const newImg = new Image();
@@ -450,37 +528,38 @@
             processQueue();
         };
 
-        const timeout = setTimeout(() => {
-            if (finished) return;
+        const fallback = () => {
             if (url.includes('GetStrip8') && url.includes('p1')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
                     const pawnName = match[1];
                     const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
-                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40` });
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`, onLoad, onFail });
                 } else {
-                    img.style.display = "none";
+                    if (onFail) onFail(); else img.style.display = "none";
                 }
             } else if (url.includes('_80') && !url.includes('p1')) {
-                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
+                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
             } else if (url.includes('gs.xat.com')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
                     const pawnName = match[1];
                     const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase();
                     if (isCapitalized) {
-                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${pawnName.toLowerCase()})_40` });
+                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${pawnName.toLowerCase()})_40`, onLoad, onFail });
                     } else {
-                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${pawnName.toLowerCase()})_40` });
+                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${pawnName.toLowerCase()})_40`, onLoad, onFail });
                     }
                 } else {
-                    img.style.display = "none";
+                    if (onFail) onFail(); else img.style.display = "none";
                 }
             } else {
-                img.style.display = "none";
+                if (onFail) onFail(); else img.style.display = "none";
             }
             done();
-        }, 5000);
+        };
+
+        const timeout = setTimeout(() => { if (!finished) fallback(); }, 5000);
 
         newImg.onload = () => {
             clearTimeout(timeout);
@@ -491,55 +570,22 @@
                 img.style.opacity = "1";
                 img.style.visibility = "visible";
             });
+            if (onLoad) onLoad();
             done();
         };
 
-        newImg.onerror = () => {
-            clearTimeout(timeout);
-            if (url.includes('GetStrip8') && url.includes('p1')) {
-                // GetStrip8 falló → intentar gs.xat.com con mayúscula
-                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
-                if (match) {
-                    const pawnName = match[1];
-                    const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
-                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40` });
-                } else {
-                    img.style.display = "none";
-                }
-            } else if (url.includes('_80') && !url.includes('p1')) {
-                // Fallback normal _80 → _40
-                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40') });
-            } else if (url.includes('gs.xat.com')) {
-                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
-                if (match) {
-                    const pawnName = match[1];
-                    const isCapitalized = pawnName.charAt(0) === pawnName.charAt(0).toUpperCase();
-                    if (isCapitalized) {
-                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${pawnName.toLowerCase()})_40` });
-                    } else {
-                        // Último intento: algunos peones no usan prefijo p1 en el servidor
-                        LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${pawnName.toLowerCase()})_40` });
-                    }
-                } else {
-                    img.style.display = "none";
-                }
-            } else {
-                img.style.display = "none";
-            }
-            done();
-        };
+        newImg.onerror = () => { clearTimeout(timeout); fallback(); };
 
         newImg.src = url;
     }
 
-    function forceLoadImage(img, url) {
+        function forceLoadImage(img, url) {
         LOAD_QUEUE.push({ img, url });
         processQueue();
     }
 
     // ─── Utilidades ──────────────────────────────────────────────────────────
 
-    // FIX: Validar formato del nombre antes de usarlo en la URL
     function sanitizePowerName(name) {
         if (!/^[a-z0-9_-]+$/i.test(name)) throw new Error("Nombre de poder inválido.");
         return encodeURIComponent(name.toLowerCase());
@@ -548,7 +594,6 @@
     const getSafeValue = (value) =>
         (value === undefined || value === null || value === "") ? "N/A" : value;
 
-    // FIX: Una sola función de badge con parámetro de estilo — elimina duplicación y confusión
     const getBadge = (val, style = 'info') =>
         `badge ${val === 'N/A' ? 'badge-neutral' : `badge-${style}`}`;
 
@@ -572,7 +617,6 @@
         }
         spriteContainer.appendChild(img);
 
-        // FIX: Sin cache-buster en imágenes estáticas — el navegador puede cachearlas
         forceLoadImage(img, imgUrl);
 
         const input = document.createElement('input');
@@ -585,7 +629,6 @@
         btnCopy.className = 'btn-action';
         btnCopy.textContent = 'Copiar';
 
-        // FIX: Clipboard API moderna en lugar de execCommand obsoleto
         btnCopy.onclick = () => {
             try {
                 const tempInput = document.createElement("input");
@@ -626,18 +669,14 @@
         content.style.display = 'none';
         errorState.style.display = 'none';
         
-        // FIX: Ocultar y reiniciar la tarjeta de peones de la colección padre al buscar un nuevo poder
         document.getElementById('parentCollectionPawnsCard').style.display = 'none';
         document.getElementById('parentCollectionPawnsCard').dataset.loaded = '';
 
-        // FIX: Limpiar cola pendiente de búsqueda anterior (evita race condition)
         LOAD_QUEUE = [];
 
         try {
-            // FIX: Validar y sanitizar el nombre antes de usarlo en la URL
             const safeName = sanitizePowerName(rawName);
 
-            // FIX: Peticiones en paralelo con Promise.all en lugar de secuenciales
             const [powerRes, pawnsRes, collectionRes, allCollectionsRes] = await Promise.all([
                 fetch(`https://illuxat.com/api/power/${safeName}`),
                 fetch("https://api.xatblog.net/activepawns"),
@@ -645,7 +684,6 @@
                 fetch("https://api.xatblog.net/collectionlist")
             ]);
 
-            // FIX: Verificar response.ok para detectar errores HTTP reales (404, 500…)
             if (!powerRes.ok) throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
 
             const data = await powerRes.json();
@@ -661,7 +699,6 @@
                 }
             }
 
-            // Colección: solo válido si tiene lista de powers requeridos con elementos
             let collectionData = null;
             if (collectionRes.ok) {
                 const dataCol = await collectionRes.json();
@@ -671,12 +708,10 @@
                 }
             }
 
-            // Buscar si el power pertenece como requerido a alguna colección
             let parentCollection = null;
             if (!collectionData && allCollectionsRes.ok) {
                 const allCol = await allCollectionsRes.json();
                 if (allCol.code === 200 && Array.isArray(allCol.powers) && allCol.powers.length > 0) {
-                    // Fetch paralelo de todas las colecciones
                     const colDetails = await Promise.all(
                         allCol.powers.map(c => fetch(`https://api.xatblog.net/collectionlist/${c.name}`)
                             .then(r => r.ok ? r.json() : null)
@@ -725,19 +760,16 @@
         document.getElementById('cell-name').textContent = item.name;
         document.getElementById('cell-desc').textContent = item.description;
 
-        // FIX: Usando getBadge() unificado — status usa 'danger', precios usan 'info'
         document.getElementById('cell-status').innerHTML       = `<span class="${getBadge(item.status, 'danger')}">${item.status}</span>`;
         document.getElementById('cell-store-status').innerHTML = `<span class="${getBadge(item.storeStatus, 'danger')}">${item.storeStatus}</span>`;
         document.getElementById('cell-price').innerHTML        = `<span class="${getBadge(item.priceStore, 'info')}">${item.priceStore}</span>`;
         document.getElementById('cell-trade').innerHTML        = `<span class="${getBadge(item.priceTrade, 'info')}">${item.priceTrade}</span>`;
 
-        // Columna Colección — visible solo si el power pertenece a una como requerido
         const cellCollection = document.getElementById('cell-collection');
         const thCollection   = document.getElementById('th-collection');
         if (item.ParentCollection) {
             thCollection.style.display   = '';
             cellCollection.style.display = '';
-            // Imagen del smile de la supercolección usando GetStrip8
             const colImgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(item.ParentCollection.name)})_80`;
             const colImg = document.createElement('img');
             colImg.className = 'sprite-image';
@@ -761,7 +793,6 @@
             colWrap.appendChild(colImg);
             colWrap.appendChild(colName);
 
-            // Click: fetch peones de la colección padre y mostrarlos
             colWrap.addEventListener('click', () => loadParentCollectionPawns(item.ParentCollection.name));
 
             cellCollection.innerHTML = '';
@@ -772,7 +803,6 @@
             cellCollection.innerHTML = '';
         }
 
-        // Imagen principal
         const mainImageContainer = document.getElementById('mainImageContainer');
         mainImageContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/>
@@ -783,19 +813,15 @@
         tImg.decoding = "sync";
         mainImageContainer.appendChild(tImg);
         const primerSmiley = item.Smileys.length > 0 ? item.Smileys[0] : item.name;
-        // FIX: Sin cache-buster — estas imágenes son estáticas
         forceLoadImage(tImg, `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(primerSmiley)})_80`);
 
-        // Smileys
         const smileysGrid = document.getElementById('codesContainer');
         smileysGrid.innerHTML = '';
-        // FIX: Sin setTimeout artificial — la cola ya controla la concurrencia
         item.Smileys.forEach((nombre) => {
             const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(nombre)})_80`;
             createImageCard(nombre, imgUrl, `(${nombre})`, smileysGrid);
         });
 
-        // Active Pawns — oculto si es power de colección
         const pawnsCard = document.getElementById("pawnsCard");
         const pawnsGrid = document.getElementById("pawnsGrid");
         pawnsGrid.innerHTML = '';
@@ -819,7 +845,6 @@
             pawnsCard.style.display = 'none';
         }
 
-        // Hats / Limited Pawns
         const hatsGrid = document.getElementById("hatsGrid");
         const hatsCard = document.getElementById("hatsCard");
         hatsGrid.innerHTML = '';
@@ -837,7 +862,6 @@
         document.getElementById('loader').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
 
-        // ── Colección: Powers Requeridos y Peones ────────────────────────────
         const collectionRequiredCard = document.getElementById('collectionRequiredCard');
         const collectionRequiredGrid = document.getElementById('collectionRequiredGrid');
         const collectionPawnsCard    = document.getElementById('collectionPawnsCard');
@@ -847,7 +871,6 @@
         collectionPawnsGrid.innerHTML    = '';
 
         if (item.Collection) {
-            // Powers requeridos — usar primer smiley del power como imagen representativa
             const required = Array.isArray(item.Collection.required) ? item.Collection.required : [];
             if (required.length > 0) {
                 collectionRequiredCard.style.display = 'block';
@@ -859,7 +882,6 @@
                 collectionRequiredCard.style.display = 'none';
             }
 
-            // Peones de la colección — GetStrip8 primero (universal), gs.xat.com como fallback
             const colPawns = Array.isArray(item.Collection.pawns) ? item.Collection.pawns : [];
             if (colPawns.length > 0) {
                 collectionPawnsCard.style.display = 'block';
@@ -871,7 +893,6 @@
                 collectionPawnsCard.style.display = 'none';
             }
         } else {
-            // No es un power de colección — ocultar ambas secciones
             collectionRequiredCard.style.display = 'none';
             collectionPawnsCard.style.display    = 'none';
         }
@@ -884,7 +905,6 @@
         const title  = document.getElementById('parentCollectionPawnsTitle');
         const loader = document.getElementById('parentCollectionPawnsLoader');
 
-        // Si ya está visible con los mismos peones, togglear (cerrar)
         if (card.style.display !== 'none' && card.dataset.loaded === colName) {
             card.style.animation = 'none';
             card.style.display = 'none';
@@ -892,7 +912,6 @@
             return;
         }
 
-        // Mostrar card con loader
         grid.innerHTML = '';
         title.textContent = 'Peones de ' + colName.charAt(0).toUpperCase() + colName.slice(1);
         loader.style.display = 'inline';
@@ -929,6 +948,259 @@
         e.preventDefault();
         const powerInput = document.getElementById('searchInput').value.trim();
         if (powerInput) fetchPowerData(powerInput);
+        document.getElementById('autocompleteList').style.display = 'none';
+    });
+
+    // ─── Auto-Sugerencias: Lista global con tipo ─────────────────────────────
+    // Cada entrada: { name: string, isCollection: boolean }
+    let allPowersList = [];
+    const _seen = new Set();
+
+    function _addEntry(name, isCollection = false) {
+        if (typeof name !== 'string') return;
+        const clean = name.trim().toLowerCase();
+        if (!/^[a-z0-9_-]{2,25}$/.test(clean)) return;
+        if (_seen.has(clean)) {
+            if (isCollection) {
+                const ex = allPowersList.find(e => e.name === clean);
+                if (ex) ex.isCollection = true;
+            }
+            return;
+        }
+        _seen.add(clean);
+        allPowersList.push({ name: clean, isCollection });
+    }
+
+    // Lista completa y verificada de todos los powers de xat (actualizada 2026)
+    const KNOWN_POWERS = [
+        // IDs 1-50
+        "topman","subhide","mod8","zoom","nofollow","invert","mirror","noaudies",
+        "reghide","nopc","tempmod","hat","red","green","blue","light","heart",
+        "shuffle","animate","square","nameglow","cycle","hexagon","clear","boot",
+        "octogram","show","superkick","invisible","pink","guestself","sinbin",
+        "diamond","purple","ttth","hands","hairm","hairf","fade","gag","costumes",
+        "six","dood","angel","mute","radio","fruit","sport","num",
+        // IDs 51-100
+        "hush","halloween","anime","status","thanksgiving","snowy","christmas",
+        "count","stick","dx","tempmem","valentine","blueman","party","irish",
+        "flashrank","easter","nopm","banish","circus","gkaoani","military","gline",
+        "bump","gkaliens","scifi","supporter","tempown","gcontrol","tickle","sea",
+        "silly","blastpro","flag","blastban","independence","blastde","summer",
+        "bad","rapid","horror","mint","blastkick","winter","adventure","feast",
+        "single","link",
+        // IDs 101-160
+        "shocker","fairy","namecolor","gkbear","angry","gscol","ugly","love",
+        "barge","gkkitty","fantasy","announce","hero","rankpool","spin","animal",
+        "music","gkpanda","unwell","events","zap","sins","outfit","wildwest",
+        "work","banpool","beach","candy","gback","zodiac","flower","space",
+        "snakeban","stoneage","spaceban","dance","nerd","kpeng","matchban",
+        "school","silentm","punch","away","peace","kchick","carve","spooky",
+        "kdog","bot","manga","mazeban","gold","snowman","reindeer","santa",
+        "sparta","dunce","newyear","can",
+        // IDs 161-220
+        "codeban","magicfx","spy","kduck","heartfx","carnival","topspin","movie",
+        "monster","kat","typing","ksheep","pulsefx","blobby","reverse","fuzzy",
+        "spiralfx","nursing","gsound","kbee","vortexfx","jail","zip","drip",
+        "moustache","whirlfx","doodlerace","olympic","aliens","matchrace",
+        "burningheart","snakerace","kpig","poker","pony","clockfx","drop",
+        "spacewar","speech","quest","glitterfx","quest2","lang","claus","treefx",
+        "vampyre","xavi","kmouse","eighties","foe","zombie","makeup","kheart",
+        "kmonkey","nuclear","stylist","vote","spring","eggs","hands2","hearts",
+        "kfox","kcow","sketch","led","seaside","hair2f","statusglow","super",
+        "wedding","cactus","switch","fourth","cuboid","phasefx","romance",
+        "marriage","sticky","kickall","darts","weather","kangel","kdemon",
+        "autumn","eggy","redirect","ani1","scary","halloween2","piracy","froggy",
+        "blackfriday","winterland","noel","toys","badge","celebrate","hogmanay",
+        "farm","divorce","arachnid","sweetheart","cupcake","ladybug","random",
+        "luck","tongues","springflix","snail","eventstats","easteregg",
+        "butterflies","springy","naughtystep","coffee","hamster","dreams",
+        "gamefx","worldcup","rocks","yellowcard","ballfx","winner","cutie",
+        "summerflix","statuscolor","coolz","magic","blubunni","instruments",
+        "pcback","bird","chocolate","kmoon","ksun","jump","trickortreat","creepy",
+        "manage","blueoni","icebucket","gamefx2","reveal","holidays","lunar",
+        "backup","size","egyptian","retro","jewelry","offset","amore","valfx",
+        "oids","birthday","supercycle","tv","clouds","beastie","easterlove",
+        "mobilebeta","eco","floral","shinobi","aliblue","gothic","redcard","pets",
+        "ceebear","aquatic","nick","shells","microbe","balloonfx","poke","me",
+        "transport","planets","lions","big","precious","glob","kandle","roosters",
+        "ranklock","kstar","allhallows","witch","tigers","beautifly","choirhug",
+        "sleighhug","ornaments","fireworkshug","masks","electricity","ricebowl",
+        "paints","lovemix","lovehug","mining","caterpillar","namegrad","patrick",
+        "ebunny","easterland","fools","songkran","onion","mom","koala","namewave",
+        "chores","animegirl","diva","tooth","worm","nameflag","aprincess",
+        "summerhug","kwolf","comics","popcorns","elephant","ten","spacejinx",
+        "meow","classic","boo","fall","graveyard","funfair","cadet","christmix",
+        "tropicalxmas","gobble","sparklefx","fireworksfx","battle","kaoears",
+        "x2d","mountain","lovemix2","lovefx","lovetest","kgiraffe","mousie","ruby",
+        "wish","spacefx","toad","foolsday","anichick","ribunny","kawaii","hedgehog",
+        "earth","eggie","rapidreason","neon","drawn","fishbowl","splashfx",
+        "ghostmon","broadcaster","minimon","fiesta","kloud","sline","cuticorn",
+        "nightmare","silentban","travel","puppy","firefx","flgpwn","owlie","octo",
+        "mark","skull","halloscroll","plants","yoga","fitness","pcbr","xmasscroll",
+        "kxmas","xmasfactory","flaghug","sqanimal","superblastban","superblastkick",
+        "dragons","samba","heartbreak","nuts","illusionfx","accessory","cups",
+        "patrickfx","rankscroll","hippos","bestfriend","kitcup","seasons","birdie",
+        "botstat","guineapig","baghead","hats","superanime","koffee","pizzas",
+        "portalfx","esmile","glitch","raccoons","supersummer","pcplus","silentg",
+        "glasses","muertos","superhalloween","kcar","piggy","appbot","swordfx",
+        "wigs","snowflake","superxmas","kactus","superboy","khair","marshie",
+        "valentinefx","superheart","trains","morph","fashion","skunk","meerkat",
+        "time","mime","superhobby","kbacks","easterfx","category","tshirt","fido",
+        "balloony","swimming","ahair","baby","nat","heat","creature","max",
+        "acting","couple","dinosaur","umbrella","mythy","hairb","workout","nin",
+        "fear","spookies","superscary","woodland","energyfx","kris","king",
+        "blacksale","neva","supersanta","revel","xmastime","puzzle","scamp",
+        "luvcat","ali","lovepotion","superlove","newpatrick","superegg","linefx",
+        "face","organicwaste","medical","matryoshka","teddi","jaws","polar","main",
+        "quackers","superkao","plasticwaste","gamer","tropical","seals","rabb",
+        "kavocado","care","haunt","miedo","scaryxmas","darkfriday","trader","knack",
+        "natal","magnus","subzero","acid","different","forever","bd","statusfx",
+        "chicky","lovespring","jellybean","worms","flipban","bantimes","claude",
+        "circlefx","graffiti","viki","whitelist","fright","gstyle","christmastide",
+        "newyearfx","freeze","showlove","superfx","springsmile","loveearth",
+        "superbunny","smokefx","littlebunny","superbf","blackmon","extralove",
+        "superzoo","women","earthhour","666","lights","superfarm","springeaster",
+        "supergirl","pstyle","cathats","mood","moyai","krobo","autumnmood",
+        "hallowneon","ghosty","patches","chilly","pawns","snowball","gkturkey",
+        "snowies","furball","cheers","nyfun","silo","android","sadie","tony",
+        "creamy","superhistory","starfx","likes","flor","maus","yellow","frosch",
+        "iconcolor","cogu","axo","starry","squid","puff","magik","anna","candybear",
+        "susto","fur","handy","anigirl","cerf","elfo","flipflop","selflove",
+        "cstyle","beaver","tele","lapin","queenb","emma","rider","cupcat","pawnhue",
+        "horrorgal","morgana","lems","kwinter","kide","ratmas","xaf","kitsune",
+        "vaf","lovebeat","pengfun","patday","stella","leafy",
+        // Powers de función/grupo adicionales
+        "everypower","allpowers","ranklock2","pcplus2","gkturkey2"
+    ];
+
+    async function _fetchSafe(url) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return null;
+            return await res.json();
+        } catch(e) { return null; }
+    }
+
+    async function loadPowerSuggestions() {
+        // Cargar colecciones desde API (única fuente dinámica disponible)
+        const colData = await _fetchSafe('https://api.xatblog.net/collectionlist');
+        if (colData && colData.code === 200 && Array.isArray(colData.powers)) {
+            colData.powers.forEach(c => { const n = c.name || c.Name; if (n) _addEntry(n, true); });
+        }
+
+        // Cargar todos los powers conocidos
+        KNOWN_POWERS.forEach(n => _addEntry(n, false));
+
+        allPowersList.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Si el usuario ya escribió algo mientras cargaban los datos, refrescar el dropdown
+        const liveVal = document.getElementById('searchInput')?.value?.trim().toLowerCase();
+        if (liveVal) _triggerAutocomplete(liveVal);
+    }
+
+    // Iniciar carga en segundo plano
+    loadPowerSuggestions();
+
+
+
+    // ─── Lógica de autocomplete ──────────────────────────────────────────────
+    const searchInput      = document.getElementById('searchInput');
+    const autocompleteList = document.getElementById('autocompleteList');
+
+    function _triggerAutocomplete(val) {
+        if (!val) { autocompleteList.style.display = 'none'; return; }
+        // Si el input ya no tiene ese valor (el usuario siguió escribiendo), ignorar
+        if (searchInput.value.trim().toLowerCase() !== val) return;
+
+        autocompleteList.innerHTML = '';
+
+        if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        const startsWith = allPowersList.filter(e => e.name.startsWith(val));
+        const contains   = allPowersList.filter(e => !e.name.startsWith(val) && e.name.includes(val));
+        const filtered   = [...startsWith, ...contains].slice(0, 10);
+
+        if (filtered.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        autocompleteList.style.display = 'block';
+        filtered.forEach(entry => {
+            const { name, isCollection } = entry;
+            const div     = document.createElement('div');
+            div.className = 'autocomplete-item';
+
+            // Imagen con cola de carga y fallbacks (igual que el resto de la página)
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'width:28px;height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;position:relative;';
+
+            const img = document.createElement('img');
+            img.className = 'autocomplete-img';
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s';
+            img.style.visibility = 'hidden';
+
+            // Spinner pequeño mientras carga
+            const spin = document.createElement('div');
+            spin.style.cssText = 'position:absolute;width:12px;height:12px;border:2px solid #cbd5e1;border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;';
+            imgWrap.appendChild(spin);
+            imgWrap.appendChild(img);
+
+            // Usar la cola de carga con todos los fallbacks ya implementados
+            const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_40`;
+            LOAD_QUEUE.push({
+                img,
+                url: imgUrl,
+                onLoad: () => {
+                    spin.remove();
+                    img.style.opacity  = '1';
+                    img.style.visibility = 'visible';
+                },
+                onFail: () => {
+                    spin.remove();
+                    img.src = 'https://i.imgur.com/Un8kz4J.png';
+                    img.style.opacity  = '1';
+                    img.style.visibility = 'visible';
+                }
+            });
+            processQueue();
+
+            // Texto con match resaltado
+            const matchIdx = name.indexOf(val);
+            let formattedName = name;
+            if (matchIdx !== -1) {
+                const before = name.substring(0, matchIdx);
+                const match  = name.substring(matchIdx, matchIdx + val.length);
+                const after  = name.substring(matchIdx + val.length);
+                formattedName = `${before}<span style="font-weight:800;color:var(--primary);">${match}</span>${after}`;
+            }
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = formattedName;
+
+            div.appendChild(imgWrap);
+            div.appendChild(textSpan);
+            if (isCollection) {
+                const badge = document.createElement('span');
+                badge.className = 'autocomplete-badge-col';
+                badge.textContent = 'Colección';
+                div.appendChild(badge);
+            }
+
+            div.addEventListener('click', function () {
+                searchInput.value = name;
+                autocompleteList.style.display = 'none';
+                fetchPowerData(name);
+            });
+            autocompleteList.appendChild(div);
+        });
+    }
+
+    searchInput.addEventListener('input', function () {
+        _triggerAutocomplete(this.value.trim().toLowerCase());
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== searchInput) {
+            autocompleteList.style.display = 'none';
+        }
     });
 
     // ─── Lógica del Modo Oscuro ──────────────────────────────────────────────
@@ -953,12 +1225,10 @@
         }
     });
 
-    // Refresh: solo recarga imágenes ya visibles, sin cache-buster en estáticas nuevas
     document.getElementById("refreshBtn").addEventListener("click", () => {
         document.querySelectorAll(".sprite-image").forEach(img => {
             if (!img.src?.includes("GetStrip8")) return;
             const base = img.src.split("&r=")[0];
-            // Solo añadir cache-buster en refresh manual explícito del usuario
             const refreshUrl = base + "&r=" + performance.now();
             const container = img.parentElement;
             if (container && !container.querySelector('.animate-spin')) {
