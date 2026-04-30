@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Search Powers</title>
+    <title>Dashboard de Poderes Xat</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/Un8kz4J.png">
     <style>
         :root {
@@ -379,7 +379,7 @@
 <div class="container">
 
     <form id="searchForm" class="search-container">
-        <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;">
+        <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" id="planetBtn" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;cursor:pointer;transition:transform 0.2s,opacity 0.2s;" title="Volver al inicio">
         <div class="search-input-wrapper">
             <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required autocomplete="off">
             <div id="autocompleteList" class="autocomplete-items"></div>
@@ -398,8 +398,8 @@
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:24px;height:24px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
-                    <h2 class="card-title">Smiles gratis</h2>
-                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">FREE</span>
+                    <h2 class="card-title">Smiles gratuitas de xat</h2>
+                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
                 </div>
                 <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
             </div>
@@ -541,7 +541,7 @@
         <img src="https://raw.githubusercontent.com/eamxat/Images/eadff6fb6a652a50f58fe4e9445e00a0b23f23d5/xatlogo%20text.svg"
              alt="Xat Logo"
              style="height:40px;margin:0 auto;display:block;opacity:0.8;min-width:auto;min-height:auto;">
-        <div class="footer-subtext">Search Powers - Created by: EAM96.</div>
+        <div class="footer-subtext">Información Powers - EAM96</div>
     </footer>
 
 </div>
@@ -1420,6 +1420,30 @@
             localStorage.setItem('theme', 'dark');
             themeBtn.textContent = '☀️';
         }
+    });
+
+    // ─── Planeta: resetear al inicio ────────────────────────────────────────
+    document.getElementById('planetBtn').addEventListener('click', () => {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('autocompleteList').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+        const fp = document.getElementById('freeSmilePanel');
+        const fb = document.getElementById('freeSmileBtn');
+        if (fp && fp.style.display !== 'none') {
+            fp.style.display = 'none';
+            if (fb) { fb.style.opacity = '0.7'; fb.style.transform = ''; }
+        }
+        LOAD_QUEUE = [];
+    });
+    document.getElementById('planetBtn').addEventListener('mouseenter', () => {
+        document.getElementById('planetBtn').style.transform = 'scale(1.15)';
+        document.getElementById('planetBtn').style.opacity = '0.8';
+    });
+    document.getElementById('planetBtn').addEventListener('mouseleave', () => {
+        document.getElementById('planetBtn').style.transform = '';
+        document.getElementById('planetBtn').style.opacity = '';
     });
 
     document.getElementById("refreshBtn").addEventListener("click", () => {
