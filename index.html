@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Dashboard de Poderes Xat</title>
+    <title>Search Powers</title>
     <link rel="icon" type="image/png" href="https://i.imgur.com/Un8kz4J.png">
     <style>
         :root {
@@ -398,8 +398,8 @@
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:24px;height:24px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
-                    <h2 class="card-title">Smiles gratuitas de xat</h2>
-                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
+                    <h2 class="card-title">Smiles gratis</h2>
+                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">FREE</span>
                 </div>
                 <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
             </div>
@@ -493,6 +493,13 @@
             <div id="pawnsGrid" class="codes-grid"></div>
         </div>
 
+        <div class="card" id="coloringCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Coloring</h2>
+            </div>
+            <div id="coloringGrid" class="codes-grid"></div>
+        </div>
+
         <div class="card" id="hatsCard" style="display:none;">
             <div class="card-header">
                 <h2 class="card-title">HATS / Limited Pawns</h2>
@@ -534,7 +541,7 @@
         <img src="https://raw.githubusercontent.com/eamxat/Images/eadff6fb6a652a50f58fe4e9445e00a0b23f23d5/xatlogo%20text.svg"
              alt="Xat Logo"
              style="height:40px;margin:0 auto;display:block;opacity:0.8;min-width:auto;min-height:auto;">
-        <div class="footer-subtext">Información Powers - EAM96</div>
+        <div class="footer-subtext">Search Powers - Created by: EAM96.</div>
     </footer>
 
 </div>
@@ -746,32 +753,69 @@
                 fetch(`https://api.xatblog.net/stickerlist/${safeName}`)
             ]);
 
-            let data, power, isAce = false;
+            let data, power, isAce = false, isPowerSearch = false;
+
+            // Función helper: intenta powersearch como último recurso
+            const tryPowerSearch = async () => {
+                const psRes = await fetch(`https://api.xatblog.net/powersearch/${safeName}`);
+                if (!psRes.ok) return false;
+                const psData = await psRes.json();
+                if (psData.code !== 200 || !psData.power) return false;
+                data = psData;
+                isPowerSearch = true;
+                return true;
+            };
 
             if (!powerRes.ok) {
-                // Intentar como ACE
+                // illuxat 404 → intentar ACE → intentar powersearch
                 const acesRes = await fetch(`https://illuxat.com/api/aces/${safeName}`);
-                if (!acesRes.ok) throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
-                const acesData = await acesRes.json();
-                if (acesData.code !== 200) throw new Error(`Error ${acesData.code}: Poder no encontrado o API falló.`);
-                data  = acesData;
-                isAce = true;
+                if (acesRes.ok) {
+                    const acesData = await acesRes.json();
+                    if (acesData.code === 200) { data = acesData; isAce = true; }
+                    else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado.`);
+                } else if (!await tryPowerSearch()) {
+                    throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
+                }
             } else {
                 data = await powerRes.json();
                 if (data.code !== 200) {
-                    // También intentar como ACE si power da error
+                    // illuxat error → intentar ACE → intentar powersearch
                     const acesRes2 = await fetch(`https://illuxat.com/api/aces/${safeName}`);
                     if (acesRes2.ok) {
                         const acesData2 = await acesRes2.json();
                         if (acesData2.code === 200) { data = acesData2; isAce = true; }
-                        else throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
-                    } else {
+                        else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado o API falló.`);
+                    } else if (!await tryPowerSearch()) {
                         throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
                     }
                 }
             }
 
-            power = data.data;
+            // Normalizar estructura de powersearch al formato estándar
+            if (isPowerSearch) {
+                const ps = data.power;
+                power = {
+                    Id:          ps.id,
+                    Name:        ps.name,
+                    Status:      ps.status || 'N/A',
+                    StoreStatus: ps.prices?.store || 'N/A',
+                    Prices: {
+                        store: ps.prices?.store || 'N/A',
+                        xats:  ps.prices?.fairtrade_min > 0
+                                   ? `${ps.prices.fairtrade_min} - ${ps.prices.fairtrade_max}`
+                                   : 'N/A'
+                    },
+                    Descriptions: {
+                        shortDescription: ps.description?.short || 'N/A'
+                    },
+                    Smileys: Array.isArray(ps.smilies) ? ps.smilies : [],
+                    Pawns:   null,
+                    Hats:    null,
+                    _psPawns: Array.isArray(ps.pawns) ? ps.pawns : []
+                };
+            } else {
+                power = data.data;
+            }
 
             let activePawnsList = [];
             if (pawnsRes.ok) {
@@ -819,17 +863,25 @@
                 }
             }
 
+            // Precio trade: añadir " xats" si es numérico
+            let rawTrade = isAce ? 'N/A' : getSafeValue(power.Prices?.xats);
+            if (rawTrade !== 'N/A' && /^\d/.test(String(rawTrade))) {
+                rawTrade = rawTrade + ' xats';
+            }
+
             const powerData = {
                 id:              getSafeValue(power.Id),
                 name:            getSafeValue(power.Name),
                 status:          isAce ? getSafeValue(power.Duration) : getSafeValue(power.Status),
                 storeStatus:     isAce ? 'ACE' : getSafeValue(power.StoreStatus),
                 priceStore:      getSafeValue(power.Prices?.store),
-                priceTrade:      isAce ? 'N/A' : getSafeValue(power.Prices?.xats),
+                priceTrade:      rawTrade,
                 description:     getSafeValue(power.Descriptions?.shortDescription),
                 Smileys:         Array.isArray(power.Smileys) ? power.Smileys : [],
                 Hats:            power.Hats,
                 Pawns:           power.Pawns,
+                PsPawns:         power._psPawns || [],
+                IsPowerSearch:   isPowerSearch,
                 ActivePawnsList:    activePawnsList,
                 Collection:         collectionData,
                 ParentCollection:   parentCollection,
@@ -922,10 +974,35 @@
             createImageCard(nombre, imgUrl, `(${nombre})`, smileysGrid);
         });
 
+        // Sección Coloring (solo para powersearch como everypower)
+        const coloringCard = document.getElementById("coloringCard");
+        const coloringGrid = document.getElementById("coloringGrid");
+        coloringGrid.innerHTML = '';
+        // Datos completos de coloring de everypower (hardcoded, fuente oficial)
+        const EVERYPOWER_COLORING = [
+            { name: 'p1emerald',          hat: '(hat#Ehh)' },
+            { name: 'p1emerald*ff69b4',   hat: '(hat#Ekh)' },
+            { name: 'p1emerald*000080',   hat: '(hat#Ebh)' },
+            { name: 'p1emerald*800080',   hat: '(hat#Eph)' },
+            { name: 'p1Epgold*',          hat: '(hat#Egh)' },
+            { name: 'p1emerald*DC143C',   hat: '(hat#Erh)' },
+            { name: 'p1emerald*5ab9ed',   hat: '(hat#Evh)' },
+            { name: 'p1emerald*ffff00',   hat: '(hat#Eyh)' },
+        ];
+        if (item.IsPowerSearch && item.name.toLowerCase() === 'everypower') {
+            coloringCard.style.display = 'block';
+            EVERYPOWER_COLORING.forEach((pawn) => {
+                const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
+                createImageCard(pawn.name, imgUrl, pawn.hat, coloringGrid, true);
+            });
+        } else {
+            coloringCard.style.display = 'none';
+        }
+
         const pawnsCard = document.getElementById("pawnsCard");
         const pawnsGrid = document.getElementById("pawnsGrid");
         pawnsGrid.innerHTML = '';
-        if (item.Collection) {
+        if (item.Collection || item.IsPowerSearch) {
             pawnsCard.style.display = 'none';
         } else if (Array.isArray(item.ActivePawnsList)) {
             const powerNameSearch = item.name.toLowerCase();
