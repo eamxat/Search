@@ -387,7 +387,25 @@
         <button type="submit" class="btn-search">BUSCAR</button>
         <button type="button" id="refreshBtn" class="refresh-btn" title="Recargar imágenes">⟳</button>
         <button type="button" id="themeBtn" class="theme-btn" title="Alternar modo oscuro">🌙</button>
+        <button type="button" id="freeSmileBtn" title="Smiles gratuitas de xat" style="background:transparent;border:none;cursor:pointer;padding:0;opacity:0.7;transition:opacity 0.2s,transform 0.2s;display:flex;align-items:center;">
+            <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:28px;height:28px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
+        </button>
     </form>
+
+    <!-- PANEL SMILES GRATUITAS -->
+    <div id="freeSmilePanel" style="display:none;">
+        <div class="card">
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:24px;height:24px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
+                    <h2 class="card-title">Smiles gratuitas de xat</h2>
+                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
+                </div>
+                <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
+            </div>
+            <div id="freeSmileGrid" class="codes-grid"></div>
+        </div>
+    </div>
 
     <div id="loader" class="loader-container">
         <div class="spinner"></div>
@@ -538,8 +556,16 @@
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
                 }
-            } else if (url.includes('_80') && !url.includes('p1')) {
+            } else if (url.includes('GetStrip8') && url.includes('_80') && !url.includes('p1')) {
                 LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
+            } else if (url.includes('GetStrip8') && url.includes('_40') && !url.includes('p1')) {
+                // GetStrip8 _40 también falló → último intento con gs.xat.com _20
+                const m = url.match(/c=a_%28(.+?)%29/i) || url.match(/c=a_\((.+?)\)/i);
+                if (m) {
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${m[1]})_20`, onLoad, onFail });
+                } else {
+                    if (onFail) onFail(); else img.style.display = "none";
+                }
             } else if (url.includes('gs.xat.com')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
@@ -569,8 +595,8 @@
             requestAnimationFrame(() => {
                 img.style.opacity = "1";
                 img.style.visibility = "visible";
+                if (onLoad) onLoad();
             });
-            if (onLoad) onLoad();
             done();
         };
 
@@ -949,6 +975,13 @@
         const powerInput = document.getElementById('searchInput').value.trim();
         if (powerInput) fetchPowerData(powerInput);
         document.getElementById('autocompleteList').style.display = 'none';
+        // Cerrar panel de smiles gratuitas si está abierto
+        const fp = document.getElementById('freeSmilePanel');
+        const fb = document.getElementById('freeSmileBtn');
+        if (fp && fp.style.display !== 'none') {
+            fp.style.display = 'none';
+            if (fb) { fb.style.opacity = '0.7'; fb.style.transform = ''; }
+        }
     });
 
     // ─── Auto-Sugerencias: Lista global con tipo ─────────────────────────────
@@ -1251,6 +1284,141 @@
             forceLoadImage(img, refreshUrl);
         });
     });
+
+    // ─── Smiles Gratuitas de xat ─────────────────────────────────────────────
+    const FREE_SMILES = [
+        "3d","3tomoe","6","8ball","a","a1","aghast","agitated","airplane","alien",
+        "amy","annoyed","ao","applause","arbiter","argue","ashamed","astonished","b","babythrow",
+        "backoff","bby","beaker","bear","beast","beye","biggrin","bin","bio","blk",
+        "blood","blowkiss","bomb","bot1","bowing","boy","bugs","bye","c","candyeat",
+        "cat","cb","cc","ccc","cd","cdy","censor","champagne","chest","chew",
+        "chkl","cir","clap","cloud","clover","confetti","confounded","confused","contempt","content",
+        "cool","cotton","countb","crazy","crown","crs","cry","cry2","crying","cute",
+        "cyc","d","dab","danny","daydream","dead","deal","deer","depressed","desire",
+        "dhat","dmd","dog","dollar","done","donttalk","dream","drooling","dull","dv",
+        "dynamite","ecstatic","eek","egg","emo","err","evil","eye","eyes","f",
+        "facemask","farewell","fedup","fireworks","flip","flowerthrow","flushed","flustered","folded","frown",
+        "fs","furious","g","g1","gagged","genius","ghat","gifts","globe","gloomy",
+        "goo","goth","grad","grl","grumpy","gst","hairf2","hairf3","hairf4","hairm2",
+        "hairm3","halo","hattip","hearts2","hehe","hello","here","hex","hey","hi",
+        "hih","hippo","hk","hly","hmm","homer","hug","hula","i","idc",
+        "ill","inlove","inv","inv3","ip","ipod","jester","jolly","joyful","kermit",
+        "kirb","kiss","kissing","l","lb","li","lips","livid","lolwut","look",
+        "loser","loving","lucario","luigi","mad","magic8ball","mangekyou","mario","mario8","mate",
+        "mc","medmask","meh","meloneat","memory","mephiles","mewtwo","mgp","mischief","mk",
+        "mo","moon","mouser","mtoe","mushroom","n","nc","ness","nights","ninja",
+        "nko","nme","no","nod","noface","nop","note","nrd","nurse","o",
+        "ohsure","ok","okp","omg","ono","oo","ooo","p","paint","palms",
+        "panda","parachute","partyhat","pball","pce","peach","penguin","pensive","pgm","ph",
+        "phew","pie","pig","pikachu","pirate2","pm","pmg","point","police","pray",
+        "prop","pty","puke","pull","punk","r","rad","rain","redface","ribbon",
+        "rockon","rofl","roll","rolleyes","rolling","rubik","sad","sarcastic","sb","scb",
+        "scn","screaming","seeall","shadesoff","shadow","shark","sherlock","shh","shifty","shock",
+        "shrug","sidetear","sinister","slap","sleep","sleepy","sm","sman","smart","smashball",
+        "smile","smirk","smirk2","smug","snow","snta","so","sob","sonic","sour",
+        "sphinx","spin2","sry","ss","star","steaming","stickairguitar","stickangry","stickkungfu","stickman",
+        "stickman2","stickman3","stickymca","straw","stressing","sun","surprise","swear","sweat","swt",
+        "t","tearhair","think","thumbsdown","thumbsup","tipsy","tired","tmi","toj","tongue",
+        "tox","tp","tri","ttm","turkey","twitch","u","ugc","ugh","uhuh",
+        "um","un","unamused","unreal","ush","vampire","victory","wacky","wailing","waiting",
+        "wary","weary","what","whatever","whew","whistling","wink","wt","wwe","x",
+        "x3","xana","xd","xday","xj9","xp","xstk","xtre","y","yawn",
+        "yoshi","yt","yum","yy","zany","zip2"
+    ];
+
+    let freeSmilesPanelBuilt = false;
+
+    function toggleFreeSmiles() {
+        const panel = document.getElementById('freeSmilePanel');
+        const btn   = document.getElementById('freeSmileBtn');
+        const isOpen = panel.style.display !== 'none';
+
+        if (isOpen) {
+            panel.style.display = 'none';
+            btn.style.opacity   = '0.7';
+            btn.style.transform = '';
+        } else {
+            panel.style.display = 'block';
+            btn.style.opacity   = '1';
+            btn.style.transform = 'scale(1.15)';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Construir las tarjetas solo la primera vez
+            if (!freeSmilesPanelBuilt) {
+                const grid = document.getElementById('freeSmileGrid');
+                FREE_SMILES.forEach(name => {
+                    // Construir tarjeta manualmente para poder usar onLoad en la cola
+                    const group = document.createElement('div');
+                    group.className = 'code-group';
+
+                    const spriteContainer = document.createElement('div');
+                    spriteContainer.className = 'sprite-container';
+                    spriteContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/></svg>`;
+
+                    const img = document.createElement('img');
+                    img.className = 'sprite-image';
+                    img.loading = 'eager';
+                    img.decoding = 'sync';
+                    spriteContainer.appendChild(img);
+
+                    const codigoText = `(${name})`;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'code-input';
+                    input.value = codigoText;
+                    input.readOnly = true;
+
+                    const btnCopy = document.createElement('button');
+                    btnCopy.className = 'btn-action';
+                    btnCopy.textContent = 'Copiar';
+                    btnCopy.onclick = () => {
+                        try {
+                            const tmp = document.createElement('input');
+                            tmp.value = codigoText;
+                            document.body.appendChild(tmp);
+                            tmp.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tmp);
+                            btnCopy.textContent = '¡Copiado!';
+                            btnCopy.style.backgroundColor = 'var(--success)';
+                            btnCopy.style.color = 'white';
+                        } catch {
+                            btnCopy.textContent = 'Error';
+                            btnCopy.style.color = 'var(--danger-text)';
+                        }
+                        setTimeout(() => {
+                            btnCopy.textContent = 'Copiar';
+                            btnCopy.style.backgroundColor = '';
+                            btnCopy.style.color = 'var(--primary)';
+                        }, 1500);
+                    };
+
+                    group.appendChild(spriteContainer);
+                    group.appendChild(input);
+                    group.appendChild(btnCopy);
+                    grid.appendChild(group);
+
+                    // Encolar con onLoad: si la imagen final es ≤40px mostrarla a tamaño real
+                    LOAD_QUEUE.push({
+                        img,
+                        url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_80`,
+                        onLoad: () => {
+                            if (img.naturalWidth > 0 && img.naturalWidth <= 40) {
+                                img.style.width     = img.naturalWidth + 'px';
+                                img.style.height    = img.naturalHeight + 'px';
+                                img.style.objectFit = 'none';
+                            }
+                        }
+                    });
+                    processQueue();
+                });
+                freeSmilesPanelBuilt = true;
+            }
+        }
+    }
+
+    document.getElementById('freeSmileBtn').addEventListener('click', toggleFreeSmiles);
+
 </script>
 </body>
 </html>
