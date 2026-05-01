@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Search Powers</title>
+    <link rel="icon" type="image/png" href="https://i.imgur.com/Un8kz4J.png">
+    <style>
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger-bg: #fee2e2;
+            --danger-text: #ef4444;
+            --info-bg: #dbeafe;
+            --info-text: #2563eb;
+            --success: #10b981;
+            --radius-card: 16px;
+            --radius-btn: 8px;
+            --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --transition: all 0.3s ease;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, .card, .card-header, .card-title, table, th, td,
+        .badge, .codes-grid, .code-group, .btn-action, .btn-search,
+        .refresh-btn, .theme-btn, footer, .footer-subtext,
+        .autocomplete-item, #freeSmilePanel, .search-container {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .code-input, #searchInput {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            z-index: 100;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-btn);
+            font-size: 16px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+        input::placeholder { opacity: 0.3; }
+
+        .btn-search {
+            padding: 12px 24px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-btn);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-search:hover { background-color: var(--primary-hover); }
+
+        .refresh-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .refresh-btn:hover { opacity: 1; }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-card);
+            border-radius: 0 0 var(--radius-btn) var(--radius-btn);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            transition: var(--transition);
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover {
+            background-color: var(--bg-body);
+        }
+
+        .autocomplete-img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            background: #f8fafc;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .theme-btn {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+            margin-left: 5px;
+            transition: var(--transition);
+        }
+
+        .theme-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        [data-theme="dark"] {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border-color: #374151;
+            --danger-bg: rgba(239, 68, 68, 0.2);
+            --danger-text: #fca5a5;
+            --info-bg: rgba(59, 130, 246, 0.2);
+            --info-text: #93c5fd;
+        }
+        [data-theme="dark"] th { background-color: #111827; }
+        [data-theme="dark"] tbody tr:hover { background-color: #111827; }
+        [data-theme="dark"] .code-input { background-color: #111827; color: var(--text-main); }
+        [data-theme="dark"] .code-group { background: var(--bg-card); }
+        [data-theme="dark"] .btn-action { background: var(--bg-card); }
+        [data-theme="dark"] .btn-action:hover { background-color: var(--bg-body); }
+        [data-theme="dark"] #cell-name { color: var(--text-main) !important; }
+        [data-theme="dark"] #cell-desc { color: var(--text-muted) !important; }
+        [data-theme="dark"] [style*="#854d0e"] { color: #fef08a !important; }
+        [data-theme="dark"] [style*="#fef9c3"] { background: #713f12 !important; }
+        [data-theme="dark"] .autocomplete-items { background-color: var(--bg-card); border-color: var(--border-color); }
+        [data-theme="dark"] .autocomplete-item { color: var(--text-main); border-bottom-color: var(--border-color); }
+        [data-theme="dark"] .autocomplete-item:hover { background-color: var(--bg-body); }
+        [data-theme="dark"] .autocomplete-img { background-color: var(--bg-body); }
+
+        .card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-card);
+            box-shadow: var(--shadow-card);
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(0,0,0,0.02);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--bg-body);
+        }
+
+        .card-title { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+
+        .table-responsive { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th, td { padding: 16px; border-bottom: 1px solid var(--border-color); }
+
+        th {
+            background-color: #f9fafb;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tbody tr { transition: var(--transition); }
+        tbody tr:hover { background-color: #f9fafb; }
+
+        .sprite-container {
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .sprite-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            position: static !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+        }
+        .sprite-image.pawn-natural {
+            width: auto !important;
+            height: auto !important;
+            max-width: none !important;
+            max-height: none !important;
+            object-fit: none !important;
+        }
+
+        .animate-spin { animation: spin 1s linear infinite; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-danger { background-color: var(--danger-bg); color: var(--danger-text); }
+        .badge-info   { background-color: var(--info-bg);   color: var(--info-text);   }
+        .badge-neutral { background-color: var(--border-color); color: var(--text-muted); }
+
+        .codes-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .code-group {
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-btn);
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: var(--transition);
+            width: 140px;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .code-group:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #cbd5e1;
+        }
+
+        .code-input {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            padding: 12px 15px;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            text-align: center;
+            outline: none;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 10px 16px;
+            background: white;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-action:hover { background-color: var(--bg-body); }
+
+        .loader-container, .error-container { display: none; text-align: center; padding: 40px; }
+
+        .error-container {
+            background-color: var(--danger-bg);
+            color: var(--danger-text);
+            border-radius: var(--radius-card);
+            margin-bottom: 20px;
+            border: 1px solid #fca5a5;
+            font-weight: 600;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px auto;
+        }
+
+        #dashboardContent { display: none; }
+
+        .footer-subtext { font-size: 12px; opacity: 0.4; text-align: center; margin-top: 5px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .autocomplete-badge-col {
+            font-size: 9px;
+            font-weight: 800;
+            background: #fef9c3;
+            color: #854d0e;
+            border-radius: 9999px;
+            padding: 1px 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        [data-theme="dark"] .autocomplete-badge-col {
+            background: #713f12;
+            color: #fef08a;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 12px 10px; }
+
+            .search-container {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .search-container > img { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
+
+            .search-input-wrapper { max-width: 100%; order: 3; flex: 1 1 100%; }
+
+            .btn-search { order: 4; flex: 1; font-size: 14px; padding: 10px 16px; }
+
+            #refreshBtn, #themeBtn, #freeSmileBtn { order: 2; }
+
+            .card { padding: 16px 12px; border-radius: 12px; }
+
+            .card-title { font-size: 1.05rem; }
+
+            .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { font-size: 13px; }
+            th, td { padding: 10px 8px; }
+
+            @media (max-width: 480px) {
+                #th-collection, #cell-collection { display: none !important; }
+            }
+
+            .code-group { width: 110px; }
+
+            .sprite-container {
+                width: 60px !important;
+                height: 60px !important;
+                min-width: 60px !important;
+                min-height: 60px !important;
+            }
+
+            .code-input { font-size: 12px; padding: 8px 10px; }
+
+            .btn-action { font-size: 12px; padding: 8px 12px; }
+
+            .autocomplete-items { max-height: 220px; }
+            .autocomplete-item { padding: 8px 12px; font-size: 14px; }
+
+            #freeSmilePanel .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+            .codes-grid { gap: 10px; }
+
+            footer { margin-top: 24px; padding: 12px; }
+
+            #freeSmilePanel .card-header button { align-self: flex-end; }
+        }
+
+        @media (max-width: 380px) {
+            .code-group { width: 95px; }
+            .sprite-container {
+                width: 50px !important;
+                height: 50px !important;
+                min-width: 50px !important;
+                min-height: 50px !important;
+            }
+            .code-input { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <form id="searchForm" class="search-container">
+        <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" id="planetBtn" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;cursor:pointer;transition:transform 0.2s,opacity 0.2s;" title="Volver al inicio">
+        <div class="search-input-wrapper">
+            <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required autocomplete="off">
+            <div id="autocompleteList" class="autocomplete-items"></div>
+        </div>
+        <button type="submit" class="btn-search">BUSCAR</button>
+        <button type="button" id="refreshBtn" class="refresh-btn" title="Recargar imágenes">⟳</button>
+        <button type="button" id="themeBtn" class="theme-btn" title="Alternar modo oscuro">🌙</button>
+        <button type="button" id="freeSmileBtn" title="Smiles gratuitas de xat" style="background:transparent;border:none;cursor:pointer;padding:0;opacity:0.7;transition:opacity 0.2s,transform 0.2s;display:flex;align-items:center;">
+            <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:28px;height:28px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
+        </button>
+    </form>
+
+    <!-- PANEL SMILES GRATUITAS -->
+    <div id="freeSmilePanel" style="display:none;">
+        <div class="card">
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:24px;height:24px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
+                    <h2 class="card-title">Smiles gratuitas de xat</h2>
+                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
+                </div>
+                <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
+            </div>
+            <div id="freeSmileGrid" class="codes-grid"></div>
+            <style>
+                #freeSmileGrid .sprite-container {
+                    width: 80px !important;
+                    height: 80px !important;
+                    min-width: 80px !important;
+                    min-height: 80px !important;
+                }
+                #freeSmileGrid .sprite-image {
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: 80px !important;
+                    max-height: 80px !important;
+                    object-fit: contain !important;
+                }
+            </style>
+        </div>
+    </div>
+
+    <div id="loader" class="loader-container">
+        <div class="spinner"></div>
+        <p style="color:var(--text-muted);font-weight:600;">Extrayendo datos...</p>
+    </div>
+
+    <div id="errorState" class="error-container">
+        <p id="errorMessage">Ha ocurrido un error.</p>
+    </div>
+
+    <div id="dashboardContent">
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Información sobre el power</h2>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Imagen</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Estatus</th>
+                            <th>Store Status</th>
+                            <th>Precio</th>
+                            <th>Precio en Trade/Cambio</th>
+                            <th id="th-collection" style="display:none;">Colección</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td id="cell-id" style="font-weight:600;"></td>
+                            <td>
+                                <div class="sprite-container" id="mainImageContainer"></div>
+                            </td>
+                            <td id="cell-name" style="text-transform:capitalize;font-weight:700;color:#111;"></td>
+                            <td id="cell-desc" style="color:#4b5563;max-width:250px;white-space:normal;"></td>
+                            <td id="cell-status"></td>
+                            <td id="cell-store-status"></td>
+                            <td id="cell-price"></td>
+                            <td id="cell-trade"></td>
+                            <td id="cell-collection" style="display:none;"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECCIÓN STICKERS -->
+        <div class="card" id="stickersCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Stickers del power</h2>
+            </div>
+            <div id="stickersGrid" class="codes-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Smiles del power</h2>
+            </div>
+            <div id="codesContainer" class="codes-grid"></div>
+        </div>
+
+        <div class="card" id="pawnsCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Active Pawns</h2>
+            </div>
+            <div id="pawnsGrid" class="codes-grid"></div>
+        </div>
+
+        <div class="card" id="coloringCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Coloring</h2>
+            </div>
+            <div id="coloringGrid" class="codes-grid"></div>
+        </div>
+
+        <div class="card" id="hatsCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">HATS / Limited Pawns</h2>
+            </div>
+            <div id="hatsGrid" class="codes-grid"></div>
+        </div>
+
+        <!-- SECCIÓN COLECCIÓN: Powers Requeridos -->
+        <div class="card" id="collectionRequiredCard" style="display:none;">
+            <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <h2 class="card-title">Powers requeridos</h2>
+            </div>
+            <div id="collectionRequiredGrid" class="codes-grid"></div>
+        </div>
+
+        <!-- SECCIÓN COLECCIÓN: Peones de Colección -->
+        <div class="card" id="collectionPawnsCard" style="display:none;">
+            <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <h2 class="card-title">Peones de la colección</h2>
+            </div>
+            <div id="collectionPawnsGrid" class="codes-grid"></div>
+        </div>
+
+        <!-- SECCIÓN: Peones de la colección padre -->
+        <div class="card" id="parentCollectionPawnsCard" style="display:none;">
+            <div class="card-header" style="display:flex;align-items:center;gap:10px;">
+                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <h2 class="card-title" id="parentCollectionPawnsTitle">Peones de la colección</h2>
+                <span id="parentCollectionPawnsLoader" style="display:none;font-size:12px;color:var(--text-muted);margin-left:8px;">Cargando...</span>
+            </div>
+            <div id="parentCollectionPawnsGrid" class="codes-grid"></div>
+        </div>
+
+    </div>
+
+    <footer style="text-align:center;margin-top:40px;padding:20px;">
+        <img src="https://raw.githubusercontent.com/eamxat/Images/eadff6fb6a652a50f58fe4e9445e00a0b23f23d5/xatlogo%20text.svg"
+             alt="Xat Logo"
+             style="height:40px;margin:0 auto;display:block;opacity:0.8;min-width:auto;min-height:auto;">
+        <div class="footer-subtext">Xat Powers Data - Free tool Created by: EAM96</div>
+    </footer>
+
+</div>
+<script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12') e.preventDefault();
+        if (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase())) e.preventDefault();
+        if (e.ctrlKey && e.key.toUpperCase() === 'U') e.preventDefault();
+    });
+
+    let LOAD_QUEUE = [];
+    let activeLoads = 0;
+    const MAX_CONCURRENT = 6;
+
+    function processQueue() {
+        if (activeLoads >= MAX_CONCURRENT || LOAD_QUEUE.length === 0) return;
+        const job = LOAD_QUEUE.shift();
+        activeLoads++;
+        const { img, url, onLoad, onFail } = job;
+        img.style.opacity = "0";
+        img.style.visibility = "hidden";
+        const newImg = new Image();
+        let finished = false;
+
+        const done = () => {
+            if (finished) return;
+            finished = true;
+            activeLoads--;
+            processQueue();
+        };
+
+        const fallback = () => {
+            if (url.includes('GetStrip8') && url.includes('p1')) {
+                const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
+                if (match) {
+                    const pawnName = match[1];
+                    const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`, onLoad, onFail });
+                } else {
+                    if (onFail) onFail(); else img.style.display = "none";
+                }
+            } else if (url.includes('GetStrip8') && url.includes('_80') && !url.includes('p1')) {
+                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
+            } else if (url.includes('GetStrip8') && url.includes('_40') && !url.includes('p1')) {
+                const m = url.match(/c=a_%28(.+?)%29/i) || url.match(/c=a_\((.+?)\)/i);
+                if (m) {
+                    // Intentar con lowercase como último recurso
+                    const lower = decodeURIComponent(m[1]).toLowerCase();
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${encodeURIComponent(lower)})_20`, onLoad, onFail });
+                } else {
+                    if (onFail) onFail(); else img.style.display = "none";
+                }
+            } else if (url.includes('gs.xat.com')) {
+                // Extraer nombre del peón preservando capitalización original
+                const nameMatch = url.match(/a_\((.+?)\)_/i);
+                const rawName = nameMatch ? nameMatch[1] : null;
+
+                if (url.includes('_80')) {
+                    // _80 falló → intentar _40 (mismo nombre, mismo case)
+                    LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
+                } else if (url.includes('_40')) {
+                    // _40 falló → intentar _20 (mismo nombre, mismo case)
+                    LOAD_QUEUE.push({ img, url: url.replace('_40', '_20'), onLoad, onFail });
+                } else if (url.includes('_20') && rawName) {
+                    // _20 también falló → último intento con GetStrip8 _40 preservando nombre original
+                    LOAD_QUEUE.push({
+                        img,
+                        url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`,
+                        onLoad,
+                        onFail
+                    });
+                } else {
+                    if (onFail) onFail(); else img.style.display = "none";
+                }
+            } else {
+                if (onFail) onFail(); else img.style.display = "none";
+            }
+            done();
+        };
+
+        const timeout = setTimeout(() => { if (!finished) fallback(); }, 5000);
+
+        newImg.onload = () => {
+            clearTimeout(timeout);
+            img.src = newImg.src;
+            const spinner = img.parentElement?.querySelector('.animate-spin');
+            if (spinner) spinner.remove();
+            requestAnimationFrame(() => {
+                img.style.opacity = "1";
+                img.style.visibility = "visible";
+                if (onLoad) onLoad();
+            });
+            done();
+        };
+
+        newImg.onerror = () => { clearTimeout(timeout); fallback(); };
+
+        newImg.src = url;
+    }
+
+    function forceLoadImage(img, url) {
+        LOAD_QUEUE.push({ img, url });
+        processQueue();
+    }
+
+    function sanitizePowerName(name) {
+        if (!/^[a-z0-9_-]+$/i.test(name)) throw new Error("Nombre de poder inválido.");
+        return encodeURIComponent(name.toLowerCase());
+    }
+
+    const getSafeValue = (value) =>
+        (value === undefined || value === null || value === "") ? "N/A" : value;
+
+    const getBadge = (val, style = 'info') =>
+        `badge ${val === 'N/A' ? 'badge-neutral' : `badge-${style}`}`;
+
+    function createImageCard(nombre, imgUrl, codigoText, container, smallPawn = false) {
+        const group = document.createElement('div');
+        group.className = 'code-group';
+
+        const spriteContainer = document.createElement('div');
+        spriteContainer.className = 'sprite-container';
+        spriteContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/>
+        </svg>`;
+
+        const img = document.createElement('img');
+        img.className = 'sprite-image';
+        img.loading = "eager";
+        img.decoding = "sync";
+        if (smallPawn) {
+            img.classList.add("pawn-natural");
+        }
+        spriteContainer.appendChild(img);
+
+        forceLoadImage(img, imgUrl);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'code-input';
+        input.value = codigoText;
+        input.readOnly = true;
+
+        const btnCopy = document.createElement('button');
+        btnCopy.className = 'btn-action';
+        btnCopy.textContent = 'Copiar';
+
+        btnCopy.onclick = () => {
+            try {
+                const tempInput = document.createElement("input");
+                tempInput.value = codigoText;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempInput);
+
+                btnCopy.textContent = '¡Copiado!';
+                btnCopy.style.backgroundColor = 'var(--success)';
+                btnCopy.style.color = 'white';
+            } catch {
+                btnCopy.textContent = 'Error';
+                btnCopy.style.color = 'var(--danger-text)';
+            }
+            setTimeout(() => {
+                btnCopy.textContent = 'Copiar';
+                btnCopy.style.backgroundColor = '';
+                btnCopy.style.color = 'var(--primary)';
+            }, 1500);
+        };
+
+        group.appendChild(spriteContainer);
+        group.appendChild(input);
+        group.appendChild(btnCopy);
+        container.appendChild(group);
+    }
+
+    async function fetchPowerData(rawName) {
+        const _fp = document.getElementById('freeSmilePanel');
+        const _fb = document.getElementById('freeSmileBtn');
+        if (_fp && _fp.style.display !== 'none') {
+            _fp.style.display = 'none';
+            if (_fb) { _fb.style.opacity = '0.7'; _fb.style.transform = ''; }
+        }
+
+        const loader       = document.getElementById('loader');
+        const content      = document.getElementById('dashboardContent');
+        const errorState   = document.getElementById('errorState');
+        const errorMessage = document.getElementById('errorMessage');
+
+        loader.style.display = 'block';
+        content.style.display = 'none';
+        errorState.style.display = 'none';
+        
+        document.getElementById('parentCollectionPawnsCard').style.display = 'none';
+        document.getElementById('parentCollectionPawnsCard').dataset.loaded = '';
+
+        LOAD_QUEUE = [];
+
+        try {
+            const safeName = sanitizePowerName(rawName);
+
+            const [powerRes, pawnsRes, collectionRes, allCollectionsRes, stickerRes] = await Promise.all([
+                fetch(`https://illuxat.com/api/power/${safeName}`),
+                fetch("https://api.xatblog.net/activepawns"),
+                fetch(`https://api.xatblog.net/collectionlist/${safeName}`),
+                fetch("https://api.xatblog.net/collectionlist"),
+                fetch(`https://api.xatblog.net/stickerlist/${safeName}`)
+            ]);
+
+            let data, power, isAce = false, isPowerSearch = false;
+
+            const tryPowerSearch = async () => {
+                const psRes = await fetch(`https://api.xatblog.net/powersearch/${safeName}`);
+                if (!psRes.ok) return false;
+                const psData = await psRes.json();
+                if (psData.code !== 200 || !psData.power) return false;
+                data = psData;
+                isPowerSearch = true;
+                return true;
+            };
+
+            if (!powerRes.ok) {
+                const acesRes = await fetch(`https://illuxat.com/api/aces/${safeName}`);
+                if (acesRes.ok) {
+                    const acesData = await acesRes.json();
+                    if (acesData.code === 200) { data = acesData; isAce = true; }
+                    else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado.`);
+                } else if (!await tryPowerSearch()) {
+                    throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
+                }
+            } else {
+                data = await powerRes.json();
+                if (data.code !== 200) {
+                    const acesRes2 = await fetch(`https://illuxat.com/api/aces/${safeName}`);
+                    if (acesRes2.ok) {
+                        const acesData2 = await acesRes2.json();
+                        if (acesData2.code === 200) { data = acesData2; isAce = true; }
+                        else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado o API falló.`);
+                    } else if (!await tryPowerSearch()) {
+                        throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
+                    }
+                }
+            }
+
+            if (isPowerSearch) {
+                const ps = data.power;
+                power = {
+                    Id:          ps.id,
+                    Name:        ps.name,
+                    Status:      ps.status || 'N/A',
+                    StoreStatus: ps.prices?.store || 'N/A',
+                    Prices: {
+                        store: ps.prices?.store || 'N/A',
+                        xats:  ps.prices?.fairtrade_min > 0
+                                   ? `${ps.prices.fairtrade_min} - ${ps.prices.fairtrade_max}`
+                                   : 'N/A'
+                    },
+                    Descriptions: {
+                        shortDescription: ps.description?.short || 'N/A'
+                    },
+                    Smileys: Array.isArray(ps.smilies) ? ps.smilies : [],
+                    Pawns:   null,
+                    Hats:    null,
+                    _psPawns: Array.isArray(ps.pawns) ? ps.pawns : []
+                };
+            } else {
+                power = data.data;
+            }
+
+            let activePawnsList = [];
+            if (pawnsRes.ok) {
+                const dataPawns = await pawnsRes.json();
+                if (dataPawns.code === 200 && dataPawns.data) {
+                    activePawnsList = dataPawns.data;
+                }
+            }
+
+            let collectionData = null;
+            if (collectionRes.ok) {
+                const dataCol = await collectionRes.json();
+                if (dataCol.code === 200 && dataCol.power &&
+                    Array.isArray(dataCol.power.required) && dataCol.power.required.length > 0) {
+                    collectionData = dataCol.power;
+                }
+            }
+
+            let parentCollection = null;
+            if (!collectionData && allCollectionsRes.ok) {
+                const allCol = await allCollectionsRes.json();
+                if (allCol.code === 200 && Array.isArray(allCol.powers) && allCol.powers.length > 0) {
+                    const colDetails = await Promise.all(
+                        allCol.powers.map(c => fetch(`https://api.xatblog.net/collectionlist/${c.name}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .catch(() => null))
+                    );
+                    for (let i = 0; i < colDetails.length; i++) {
+                        const col = colDetails[i];
+                        if (col && col.code === 200 && col.power &&
+                            Array.isArray(col.power.required) &&
+                            col.power.required.map(r => r.toLowerCase()).includes(safeName.toLowerCase())) {
+                            parentCollection = { name: allCol.powers[i].name, id: allCol.powers[i].id };
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let stickerList = [];
+            if (stickerRes.ok) {
+                const stickerData = await stickerRes.json();
+                if (stickerData.code === 200 && stickerData.power && Array.isArray(stickerData.power.sticker_list)) {
+                    stickerList = stickerData.power.sticker_list;
+                }
+            }
+
+            let rawTrade = isAce ? 'N/A' : getSafeValue(power.Prices?.xats);
+            if (rawTrade !== 'N/A' && /^\d/.test(String(rawTrade))) {
+                rawTrade = rawTrade + ' xats';
+            }
+
+            const powerData = {
+                id:              getSafeValue(power.Id),
+                name:            getSafeValue(power.Name),
+                status:          isAce ? getSafeValue(power.Duration) : getSafeValue(power.Status),
+                storeStatus:     isAce ? 'ACE' : getSafeValue(power.StoreStatus),
+                priceStore:      getSafeValue(power.Prices?.store),
+                priceTrade:      rawTrade,
+                description:     getSafeValue(power.Descriptions?.shortDescription),
+                Smileys:         Array.isArray(power.Smileys) ? power.Smileys : [],
+                Hats:            power.Hats,
+                Pawns:           power.Pawns,
+                PsPawns:         power._psPawns || [],
+                IsPowerSearch:   isPowerSearch,
+                ActivePawnsList:    activePawnsList,
+                Collection:         collectionData,
+                ParentCollection:   parentCollection,
+                StickerList:        stickerList
+            };
+
+            await renderDashboard(powerData);
+
+        } catch (error) {
+            loader.style.display = 'none';
+            errorMessage.textContent = error.message;
+            errorState.style.display = 'block';
+        }
+    }
+
+    async function renderDashboard(item) {
+        document.getElementById('cell-id').textContent   = item.id;
+        document.getElementById('cell-name').textContent = item.name;
+        document.getElementById('cell-desc').textContent = item.description;
+
+        document.getElementById('cell-status').innerHTML       = `<span class="${getBadge(item.status, 'danger')}">${item.status}</span>`;
+        document.getElementById('cell-store-status').innerHTML = `<span class="${getBadge(item.storeStatus, 'danger')}">${item.storeStatus}</span>`;
+        document.getElementById('cell-price').innerHTML        = `<span class="${getBadge(item.priceStore, 'info')}">${item.priceStore}</span>`;
+        document.getElementById('cell-trade').innerHTML        = `<span class="${getBadge(item.priceTrade, 'info')}">${item.priceTrade}</span>`;
+
+        const cellCollection = document.getElementById('cell-collection');
+        const thCollection   = document.getElementById('th-collection');
+        if (item.ParentCollection) {
+            thCollection.style.display   = '';
+            cellCollection.style.display = '';
+            const colImgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(item.ParentCollection.name)})_80`;
+            const colImg = document.createElement('img');
+            colImg.className = 'sprite-image';
+            colImg.loading = 'eager';
+            colImg.decoding = 'sync';
+            colImg.style.width = '40px';
+            colImg.style.height = '40px';
+            colImg.style.objectFit = 'contain';
+            colImg.style.display = 'inline-block';
+            colImg.style.opacity = '0';
+            colImg.style.visibility = 'hidden';
+            LOAD_QUEUE.push({
+                img: colImg,
+                url: colImgUrl,
+                onFail: () => {
+                    LOAD_QUEUE.push({
+                        img: colImg,
+                        url: `https://gs.xat.com/a_(${encodeURIComponent(item.ParentCollection.name)})_40`
+                    });
+                    processQueue();
+                }
+            });
+            processQueue();
+            const colName = document.createElement('div');
+            colName.textContent = item.ParentCollection.name;
+            colName.style.cssText = 'font-size:12px;font-weight:700;color:#854d0e;margin-top:4px;text-transform:capitalize;';
+            const colWrap = document.createElement('div');
+            colWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:transform 0.2s,opacity 0.2s;';
+            colWrap.title = 'Ver peones de ' + item.ParentCollection.name;
+            colWrap.addEventListener('mouseenter', () => { colWrap.style.transform = 'scale(1.1)'; colWrap.style.opacity = '0.85'; });
+            colWrap.addEventListener('mouseleave', () => { colWrap.style.transform = ''; colWrap.style.opacity = ''; });
+            colWrap.appendChild(colImg);
+            colWrap.appendChild(colName);
+            colWrap.addEventListener('click', () => loadParentCollectionPawns(item.ParentCollection.name));
+            cellCollection.innerHTML = '';
+            cellCollection.appendChild(colWrap);
+        } else {
+            thCollection.style.display   = 'none';
+            cellCollection.style.display = 'none';
+            cellCollection.innerHTML = '';
+        }
+
+        const mainImageContainer = document.getElementById('mainImageContainer');
+        mainImageContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/>
+        </svg>`;
+        const tImg = document.createElement('img');
+        tImg.className = 'sprite-image';
+        tImg.loading = "eager";
+        tImg.decoding = "sync";
+        tImg.style.cursor = 'pointer';
+        tImg.title = `Ver ${item.name} en la wiki de xat`;
+        tImg.addEventListener('click', () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank'));
+        tImg.addEventListener('error', function onErr() {
+            const fallbackUrl = `https://gs.xat.com/a_(${encodeURIComponent(primerSmiley || item.name)})_40`;
+            if (!tImg.src.includes('gs.xat.com')) {
+                tImg.src = fallbackUrl;
+            }
+        });
+        mainImageContainer.appendChild(tImg);
+        mainImageContainer.style.cursor = 'pointer';
+        mainImageContainer.style.transition = 'transform 0.2s, opacity 0.2s';
+        mainImageContainer.onmouseenter = () => { mainImageContainer.style.transform = 'scale(1.1)'; mainImageContainer.style.opacity = '0.85'; };
+        mainImageContainer.onmouseleave = () => { mainImageContainer.style.transform = ''; mainImageContainer.style.opacity = ''; };
+        mainImageContainer.onclick = () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank');
+        const primerSmiley = item.Smileys.length > 0 ? item.Smileys[0] : item.name;
+        forceLoadImage(tImg, `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(primerSmiley)})_80`);
+
+        const smileysGrid = document.getElementById('codesContainer');
+        smileysGrid.innerHTML = '';
+        item.Smileys.forEach((nombre) => {
+            const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(nombre)})_80`;
+            createImageCard(nombre, imgUrl, `(${nombre})`, smileysGrid);
+        });
+
+        const coloringCard = document.getElementById("coloringCard");
+        const coloringGrid = document.getElementById("coloringGrid");
+        coloringGrid.innerHTML = '';
+        const EVERYPOWER_COLORING = [
+            { name: 'p1emerald',          hat: '(hat#Ehh)' },
+            { name: 'p1emerald*ff69b4',   hat: '(hat#Ekh)' },
+            { name: 'p1emerald*000080',   hat: '(hat#Ebh)' },
+            { name: 'p1emerald*800080',   hat: '(hat#Eph)' },
+            { name: 'p1Epgold*',          hat: '(hat#Egh)' },
+            { name: 'p1emerald*DC143C',   hat: '(hat#Erh)' },
+            { name: 'p1emerald*5ab9ed',   hat: '(hat#Evh)' },
+            { name: 'p1emerald*ffff00',   hat: '(hat#Eyh)' },
+        ];
+        if (item.IsPowerSearch && item.name.toLowerCase() === 'everypower') {
+            coloringCard.style.display = 'block';
+            EVERYPOWER_COLORING.forEach((pawn) => {
+                const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
+                createImageCard(pawn.name, imgUrl, pawn.hat, coloringGrid, true);
+            });
+        } else {
+            coloringCard.style.display = 'none';
+        }
+
+        const pawnsCard = document.getElementById("pawnsCard");
+        const pawnsGrid = document.getElementById("pawnsGrid");
+        pawnsGrid.innerHTML = '';
+        if (item.Collection || item.IsPowerSearch) {
+            pawnsCard.style.display = 'none';
+        } else if (Array.isArray(item.ActivePawnsList)) {
+            const powerNameSearch = item.name.toLowerCase();
+            const filteredPawns = item.ActivePawnsList.filter(
+                p => p.power?.name?.toLowerCase() === powerNameSearch
+            );
+            pawnsCard.style.display = 'block';
+            if (filteredPawns.length === 0) {
+                pawnsGrid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">No active pawns</p>';
+            } else {
+                filteredPawns.forEach((pawn) => {
+                    const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
+                    createImageCard(pawn.name, imgUrl, pawn.hat, pawnsGrid, true);
+                });
+            }
+        } else {
+            pawnsCard.style.display = 'none';
+        }
+
+        const hatsGrid = document.getElementById("hatsGrid");
+        const hatsCard = document.getElementById("hatsCard");
+        hatsGrid.innerHTML = '';
+        const hatsArray = item.Hats || item.Pawns || [];
+        if (Array.isArray(hatsArray) && hatsArray.length > 0) {
+            hatsCard.style.display = 'block';
+            hatsArray.forEach((nombre) => {
+                const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(nombre)})_80`;
+                createImageCard(nombre, imgUrl, `(${nombre})`, hatsGrid);
+            });
+        } else {
+            hatsCard.style.display = 'none';
+        }
+
+        const stickersCard = document.getElementById("stickersCard");
+        const stickersGrid = document.getElementById("stickersGrid");
+        stickersGrid.innerHTML = '';
+        if (Array.isArray(item.StickerList) && item.StickerList.length > 0) {
+            stickersCard.style.display = 'block';
+            item.StickerList.forEach((stickerName) => {
+                const imgUrl = `https://gs.xat.com/h_s_${encodeURIComponent(item.name)}_${encodeURIComponent(stickerName)}_.png`;
+                createImageCard(stickerName, imgUrl, `(${item.name}.${stickerName})`, stickersGrid);
+            });
+        } else {
+            stickersCard.style.display = 'none';
+        }
+
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+
+        const collectionRequiredCard = document.getElementById('collectionRequiredCard');
+        const collectionRequiredGrid = document.getElementById('collectionRequiredGrid');
+        const collectionPawnsCard    = document.getElementById('collectionPawnsCard');
+        const collectionPawnsGrid    = document.getElementById('collectionPawnsGrid');
+
+        collectionRequiredGrid.innerHTML = '';
+        collectionPawnsGrid.innerHTML    = '';
+
+        if (item.Collection) {
+            const required = Array.isArray(item.Collection.required) ? item.Collection.required : [];
+            if (required.length > 0) {
+                collectionRequiredCard.style.display = 'block';
+                required.forEach((powerName) => {
+                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(powerName)})_80`;
+                    createImageCard(powerName, imgUrl, `(${powerName})`, collectionRequiredGrid);
+                });
+            } else {
+                collectionRequiredCard.style.display = 'none';
+            }
+
+            const colPawns = Array.isArray(item.Collection.pawns) ? item.Collection.pawns : [];
+            if (colPawns.length > 0) {
+                collectionPawnsCard.style.display = 'block';
+                colPawns.forEach((pawnName) => {
+                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_40`;
+                    createImageCard(pawnName, imgUrl, `(hat#h#${pawnName})`, collectionPawnsGrid, true);
+                });
+            } else {
+                collectionPawnsCard.style.display = 'none';
+            }
+        } else {
+            collectionRequiredCard.style.display = 'none';
+            collectionPawnsCard.style.display    = 'none';
+        }
+    }
+
+    async function loadParentCollectionPawns(colName) {
+        const card   = document.getElementById('parentCollectionPawnsCard');
+        const grid   = document.getElementById('parentCollectionPawnsGrid');
+        const title  = document.getElementById('parentCollectionPawnsTitle');
+        const loader = document.getElementById('parentCollectionPawnsLoader');
+
+        if (card.style.display !== 'none' && card.dataset.loaded === colName) {
+            card.style.animation = 'none';
+            card.style.display = 'none';
+            card.dataset.loaded = '';
+            return;
+        }
+
+        grid.innerHTML = '';
+        title.textContent = 'Peones de ' + colName.charAt(0).toUpperCase() + colName.slice(1);
+        loader.style.display = 'inline';
+        card.style.display = 'block';
+        card.dataset.loaded = '';
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        try {
+            const res = await fetch(`https://api.xatblog.net/collectionlist/${colName}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            loader.style.display = 'none';
+
+            const pawns = (data.code === 200 && data.power && Array.isArray(data.power.pawns))
+                ? data.power.pawns : [];
+
+            if (pawns.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">Sin peones disponibles</p>';
+            } else {
+                pawns.forEach((pawnName) => {
+                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_40`;
+                    createImageCard(pawnName, imgUrl, `(hat#h#${pawnName})`, grid, true);
+                });
+            }
+            card.dataset.loaded = colName;
+        } catch {
+            loader.style.display = 'none';
+            grid.innerHTML = '<p style="color:var(--danger-text);width:100%;text-align:center;">Error al cargar los peones.</p>';
+        }
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const powerInput = document.getElementById('searchInput').value.trim();
+        if (powerInput) fetchPowerData(powerInput);
+        document.getElementById('autocompleteList').style.display = 'none';
+        const fp = document.getElementById('freeSmilePanel');
+        const fb = document.getElementById('freeSmileBtn');
+        if (fp && fp.style.display !== 'none') {
+            fp.style.display = 'none';
+            if (fb) { fb.style.opacity = '0.7'; fb.style.transform = ''; }
+        }
+    });
+
+    let allPowersList = [];
+    const _seen = new Set();
+
+    function _addEntry(name, isCollection = false) {
+        if (typeof name !== 'string') return;
+        const clean = name.trim().toLowerCase();
+        if (!/^[a-z0-9_-]{2,25}$/.test(clean)) return;
+        if (_seen.has(clean)) {
+            if (isCollection) {
+                const ex = allPowersList.find(e => e.name === clean);
+                if (ex) ex.isCollection = true;
+            }
+            return;
+        }
+        _seen.add(clean);
+        allPowersList.push({ name: clean, isCollection });
+    }
+
+    const KNOWN_POWERS = [
+        "topman","subhide","mod8","zoom","nofollow","invert","mirror","noaudies",
+        "reghide","nopc","tempmod","hat","red","green","blue","light","heart",
+        "shuffle","animate","square","nameglow","cycle","hexagon","clear","boot",
+        "octogram","show","superkick","invisible","pink","guestself","sinbin",
+        "diamond","purple","ttth","hands","hairm","hairf","fade","gag","costumes",
+        "six","dood","angel","mute","radio","fruit","sport","num",
+        "hush","halloween","anime","status","thanksgiving","snowy","christmas",
+        "count","stick","dx","tempmem","valentine","blueman","party","irish",
+        "flashrank","easter","nopm","banish","circus","gkaoani","military","gline",
+        "bump","gkaliens","scifi","supporter","tempown","gcontrol","tickle","sea",
+        "silly","blastpro","flag","blastban","independence","blastde","summer",
+        "bad","rapid","horror","mint","blastkick","winter","adventure","feast",
+        "single","link",
+        "shocker","fairy","namecolor","gkbear","angry","gscol","ugly","love",
+        "barge","gkkitty","fantasy","announce","hero","rankpool","spin","animal",
+        "music","gkpanda","unwell","events","zap","sins","outfit","wildwest",
+        "work","banpool","beach","candy","gback","zodiac","flower","space",
+        "snakeban","stoneage","spaceban","dance","nerd","kpeng","matchban",
+        "school","silentm","punch","away","peace","kchick","carve","spooky",
+        "kdog","bot","manga","mazeban","gold","snowman","reindeer","santa",
+        "sparta","dunce","newyear","can",
+        "codeban","magicfx","spy","kduck","heartfx","carnival","topspin","movie",
+        "monster","kat","typing","ksheep","pulsefx","blobby","reverse","fuzzy",
+        "spiralfx","nursing","gsound","kbee","vortexfx","jail","zip","drip",
+        "moustache","whirlfx","doodlerace","olympic","aliens","matchrace",
+        "burningheart","snakerace","kpig","poker","pony","clockfx","drop",
+        "spacewar","speech","quest","glitterfx","quest2","lang","claus","treefx",
+        "vampyre","xavi","kmouse","eighties","foe","zombie","makeup","kheart",
+        "kmonkey","nuclear","stylist","vote","spring","eggs","hands2","hearts",
+        "kfox","kcow","sketch","led","seaside","hair2f","statusglow","super",
+        "wedding","cactus","switch","fourth","cuboid","phasefx","romance",
+        "marriage","sticky","kickall","darts","weather","kangel","kdemon",
+        "autumn","eggy","redirect","ani1","scary","halloween2","piracy","froggy",
+        "blackfriday","winterland","noel","toys","badge","celebrate","hogmanay",
+        "farm","divorce","arachnid","sweetheart","cupcake","ladybug","random",
+        "luck","tongues","springflix","snail","eventstats","easteregg",
+        "butterflies","springy","naughtystep","coffee","hamster","dreams",
+        "gamefx","worldcup","rocks","yellowcard","ballfx","winner","cutie",
+        "summerflix","statuscolor","coolz","magic","blubunni","instruments",
+        "pcback","bird","chocolate","kmoon","ksun","jump","trickortreat","creepy",
+        "manage","blueoni","icebucket","gamefx2","reveal","holidays","lunar",
+        "backup","size","egyptian","retro","jewelry","offset","amore","valfx",
+        "oids","birthday","supercycle","tv","clouds","beastie","easterlove",
+        "mobilebeta","eco","floral","shinobi","aliblue","gothic","redcard","pets",
+        "ceebear","aquatic","nick","shells","microbe","balloonfx","poke","me",
+        "transport","planets","lions","big","precious","glob","kandle","roosters",
+        "ranklock","kstar","allhallows","witch","tigers","beautifly","choirhug",
+        "sleighhug","ornaments","fireworkshug","masks","electricity","ricebowl",
+        "paints","lovemix","lovehug","mining","caterpillar","namegrad","patrick",
+        "ebunny","easterland","fools","songkran","onion","mom","koala","namewave",
+        "chores","animegirl","diva","tooth","worm","nameflag","aprincess",
+        "summerhug","kwolf","comics","popcorns","elephant","ten","spacejinx",
+        "meow","classic","boo","fall","graveyard","funfair","cadet","christmix",
+        "tropicalxmas","gobble","sparklefx","fireworksfx","battle","kaoears",
+        "x2d","mountain","lovemix2","lovefx","lovetest","kgiraffe","mousie","ruby",
+        "wish","spacefx","toad","foolsday","anichick","ribunny","kawaii","hedgehog",
+        "earth","eggie","rapidreason","neon","drawn","fishbowl","splashfx",
+        "ghostmon","broadcaster","minimon","fiesta","kloud","sline","cuticorn",
+        "nightmare","silentban","travel","puppy","firefx","flgpwn","owlie","octo",
+        "mark","skull","halloscroll","plants","yoga","fitness","pcbr","xmasscroll",
+        "kxmas","xmasfactory","flaghug","sqanimal","superblastban","superblastkick",
+        "dragons","samba","heartbreak","nuts","illusionfx","accessory","cups",
+        "patrickfx","rankscroll","hippos","bestfriend","kitcup","seasons","birdie",
+        "botstat","guineapig","baghead","hats","superanime","koffee","pizzas",
+        "portalfx","esmile","glitch","raccoons","supersummer","pcplus","silentg",
+        "glasses","muertos","superhalloween","kcar","piggy","appbot","swordfx",
+        "wigs","snowflake","superxmas","kactus","superboy","khair","marshie",
+        "valentinefx","superheart","trains","morph","fashion","skunk","meerkat",
+        "time","mime","superhobby","kbacks","easterfx","category","tshirt","fido",
+        "balloony","swimming","ahair","baby","nat","heat","creature","max",
+        "acting","couple","dinosaur","umbrella","mythy","hairb","workout","nin",
+        "fear","spookies","superscary","woodland","energyfx","kris","king",
+        "blacksale","neva","supersanta","revel","xmastime","puzzle","scamp",
+        "luvcat","ali","lovepotion","superlove","newpatrick","superegg","linefx",
+        "face","organicwaste","medical","matryoshka","teddi","jaws","polar","main",
+        "quackers","superkao","plasticwaste","gamer","tropical","seals","rabb",
+        "kavocado","care","haunt","miedo","scaryxmas","darkfriday","trader","knack",
+        "natal","magnus","subzero","acid","different","forever","bd","statusfx",
+        "chicky","lovespring","jellybean","worms","flipban","bantimes","claude",
+        "circlefx","graffiti","viki","whitelist","fright","gstyle","christmastide",
+        "newyearfx","freeze","showlove","superfx","springsmile","loveearth",
+        "superbunny","smokefx","littlebunny","superbf","blackmon","extralove",
+        "superzoo","women","earthhour","666","lights","superfarm","springeaster",
+        "supergirl","pstyle","cathats","mood","moyai","krobo","autumnmood",
+        "hallowneon","ghosty","patches","chilly","pawns","snowball","gkturkey",
+        "snowies","furball","cheers","nyfun","silo","android","sadie","tony",
+        "creamy","superhistory","starfx","likes","flor","maus","yellow","frosch",
+        "iconcolor","cogu","axo","starry","squid","puff","magik","anna","candybear",
+        "susto","fur","handy","anigirl","cerf","elfo","flipflop","selflove",
+        "cstyle","beaver","tele","lapin","queenb","emma","rider","cupcat","pawnhue",
+        "horrorgal","morgana","lems","kwinter","kide","ratmas","xaf","kitsune",
+        "vaf","lovebeat","pengfun","patday","stella","leafy",
+        "everypower","allpowers","ranklock2","pcplus2","gkturkey2"
+    ];
+
+    async function _fetchSafe(url) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return null;
+            return await res.json();
+        } catch(e) { return null; }
+    }
+
+    async function loadPowerSuggestions() {
+        const colData = await _fetchSafe('https://api.xatblog.net/collectionlist');
+        if (colData && colData.code === 200 && Array.isArray(colData.powers)) {
+            colData.powers.forEach(c => { const n = c.name || c.Name; if (n) _addEntry(n, true); });
+        }
+
+        KNOWN_POWERS.forEach(n => _addEntry(n, false));
+
+        allPowersList.sort((a, b) => a.name.localeCompare(b.name));
+
+        const liveVal = document.getElementById('searchInput')?.value?.trim().toLowerCase();
+        if (liveVal) _triggerAutocomplete(liveVal);
+    }
+
+    loadPowerSuggestions();
+
+    const searchInput      = document.getElementById('searchInput');
+    const autocompleteList = document.getElementById('autocompleteList');
+
+    function _triggerAutocomplete(val) {
+        if (!val) { autocompleteList.style.display = 'none'; return; }
+        if (searchInput.value.trim().toLowerCase() !== val) return;
+
+        autocompleteList.innerHTML = '';
+
+        if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        const startsWith = allPowersList.filter(e => e.name.startsWith(val));
+        const contains   = allPowersList.filter(e => !e.name.startsWith(val) && e.name.includes(val));
+        const filtered   = [...startsWith, ...contains].slice(0, 10);
+
+        if (filtered.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        autocompleteList.style.display = 'block';
+        filtered.forEach(entry => {
+            const { name, isCollection } = entry;
+            const div     = document.createElement('div');
+            div.className = 'autocomplete-item';
+
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'width:28px;height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;position:relative;';
+
+            const img = document.createElement('img');
+            img.className = 'autocomplete-img';
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s';
+            img.style.visibility = 'hidden';
+
+            const spin = document.createElement('div');
+            spin.style.cssText = 'position:absolute;width:12px;height:12px;border:2px solid #cbd5e1;border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;';
+            imgWrap.appendChild(spin);
+            imgWrap.appendChild(img);
+
+            const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_40`;
+            LOAD_QUEUE.push({
+                img,
+                url: imgUrl,
+                onLoad: () => {
+                    spin.remove();
+                    img.style.opacity  = '1';
+                    img.style.visibility = 'visible';
+                },
+                onFail: () => {
+                    spin.remove();
+                    img.src = 'https://i.imgur.com/Un8kz4J.png';
+                    img.style.opacity  = '1';
+                    img.style.visibility = 'visible';
+                }
+            });
+            processQueue();
+
+            const matchIdx = name.indexOf(val);
+            let formattedName = name;
+            if (matchIdx !== -1) {
+                const before = name.substring(0, matchIdx);
+                const match  = name.substring(matchIdx, matchIdx + val.length);
+                const after  = name.substring(matchIdx + val.length);
+                formattedName = `${before}<span style="font-weight:800;color:var(--primary);">${match}</span>${after}`;
+            }
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = formattedName;
+
+            div.appendChild(imgWrap);
+            div.appendChild(textSpan);
+            if (isCollection) {
+                const badge = document.createElement('span');
+                badge.className = 'autocomplete-badge-col';
+                badge.textContent = 'Colección';
+                div.appendChild(badge);
+            }
+
+            div.addEventListener('click', function () {
+                searchInput.value = name;
+                autocompleteList.style.display = 'none';
+                fetchPowerData(name);
+            });
+            autocompleteList.appendChild(div);
+        });
+    }
+
+    searchInput.addEventListener('input', function () {
+        _triggerAutocomplete(this.value.trim().toLowerCase());
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== searchInput) {
+            autocompleteList.style.display = 'none';
+        }
+    });
+
+    const themeBtn = document.getElementById('themeBtn');
+    const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeBtn.textContent = '☀️';
+    }
+
+    themeBtn.addEventListener('click', () => {
+        let theme = document.documentElement.getAttribute('data-theme');
+        if (theme === 'dark') {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+            themeBtn.textContent = '🌙';
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            themeBtn.textContent = '☀️';
+        }
+    });
+
+    document.getElementById('planetBtn').addEventListener('click', () => {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('autocompleteList').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'none';
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+        const fp = document.getElementById('freeSmilePanel');
+        const fb = document.getElementById('freeSmileBtn');
+        if (fp && fp.style.display !== 'none') {
+            fp.style.display = 'none';
+            if (fb) { fb.style.opacity = '0.7'; fb.style.transform = ''; }
+        }
+        LOAD_QUEUE = [];
+    });
+    document.getElementById('planetBtn').addEventListener('mouseenter', () => {
+        document.getElementById('planetBtn').style.transform = 'scale(1.15)';
+        document.getElementById('planetBtn').style.opacity = '0.8';
+    });
+    document.getElementById('planetBtn').addEventListener('mouseleave', () => {
+        document.getElementById('planetBtn').style.transform = '';
+        document.getElementById('planetBtn').style.opacity = '';
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+        document.querySelectorAll(".sprite-image").forEach(img => {
+            if (!img.src?.includes("GetStrip8")) return;
+            const base = img.src.split("&r=")[0];
+            const refreshUrl = base + "&r=" + performance.now();
+            const container = img.parentElement;
+            if (container && !container.querySelector('.animate-spin')) {
+                const svgLoader = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svgLoader.setAttribute("class", "animate-spin");
+                svgLoader.setAttribute("width", "20");
+                svgLoader.setAttribute("height", "20");
+                svgLoader.setAttribute("viewBox", "0 0 24 24");
+                svgLoader.style.cssText = "position:absolute;top:50%;left:50%;margin-top:-10px;margin-left:-10px;";
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", "12");
+                circle.setAttribute("cy", "12");
+                circle.setAttribute("r", "10");
+                circle.setAttribute("stroke", "gray");
+                circle.setAttribute("stroke-width", "2");
+                circle.setAttribute("fill", "none");
+                svgLoader.appendChild(circle);
+                container.appendChild(svgLoader);
+            }
+            forceLoadImage(img, refreshUrl);
+        });
+    });
+
+    const FREE_SMILES = [
+        "3d","3tomoe","6","8ball","a","a1","aghast","agitated","airplane","alien",
+        "amy","annoyed","ao","applause","arbiter","argue","ashamed","astonished","b","babythrow",
+        "backoff","bby","beaker","bear","beast","beye","biggrin","bin","bio","blk",
+        "blood","blowkiss","bomb","bot1","bowing","boy","bugs","bye","c","candyeat",
+        "cat","cb","cc","ccc","cd","cdy","censor","champagne","chest","chew",
+        "chkl","cir","clap","cloud","clover","confetti","confounded","confused","contempt","content",
+        "cool","cotton","countb","crazy","crown","crs","cry","cry2","crying","cute",
+        "cyc","d","dab","danny","daydream","dead","deal","deer","depressed","desire",
+        "dhat","dmd","dog","dollar","done","donttalk","dream","drooling","dull","dv",
+        "dynamite","ecstatic","eek","egg","emo","err","evil","eye","eyes","f",
+        "facemask","farewell","fedup","fireworks","flip","flowerthrow","flushed","flustered","folded","frown",
+        "fs","furious","g","g1","gagged","genius","ghat","gifts","globe","gloomy",
+        "goo","goth","grad","grl","grumpy","gst","hairf2","hairf3","hairf4","hairm2",
+        "hairm3","halo","hattip","hearts2","hehe","hello","here","hex","hey","hi",
+        "hih","hippo","hk","hly","hmm","homer","hug","hula","i","idc",
+        "ill","inlove","inv","inv3","ip","ipod","jester","jolly","joyful","kermit",
+        "kirb","kiss","kissing","l","lb","li","lips","livid","lolwut","look",
+        "loser","loving","lucario","luigi","mad","magic8ball","mangekyou","mario","mario8","mate",
+        "mc","medmask","meh","meloneat","memory","mephiles","mewtwo","mgp","mischief","mk",
+        "mo","moon","mouser","mtoe","mushroom","n","nc","ness","nights","ninja",
+        "nko","nme","no","nod","noface","nop","note","nrd","nurse","o",
+        "ohsure","ok","okp","omg","ono","oo","ooo","p","paint","palms",
+        "panda","parachute","partyhat","pball","pce","peach","penguin","pensive","pgm","ph",
+        "phew","pie","pig","pikachu","pirate2","pm","pmg","point","police","pray",
+        "prop","pty","puke","pull","punk","r","rad","rain","redface","ribbon",
+        "rockon","rofl","roll","rolleyes","rolling","rubik","sad","sarcastic","sb","scb",
+        "scn","screaming","seeall","shadesoff","shadow","shark","sherlock","shh","shifty","shock",
+        "shrug","sidetear","sinister","slap","sleep","sleepy","sm","sman","smart","smashball",
+        "smile","smirk","smirk2","smug","snow","snta","so","sob","sonic","sour",
+        "sphinx","spin2","sry","ss","star","steaming","stickairguitar","stickangry","stickkungfu","stickman",
+        "stickman2","stickman3","stickymca","straw","stressing","sun","surprise","swear","sweat","swt",
+        "t","tearhair","think","thumbsdown","thumbsup","tipsy","tired","tmi","toj","tongue",
+        "tox","tp","tri","ttm","turkey","twitch","u","ugc","ugh","uhuh",
+        "um","un","unamused","unreal","ush","vampire","victory","wacky","wailing","waiting",
+        "wary","weary","what","whatever","whew","whistling","wink","wt","wwe","x",
+        "x3","xana","xd","xday","xj9","xp","xstk","xtre","y","yawn",
+        "yoshi","yt","yum","yy","zany","zip2"
+    ];
+
+    let freeSmilesPanelBuilt = false;
+
+    function toggleFreeSmiles() {
+        const panel = document.getElementById('freeSmilePanel');
+        const btn   = document.getElementById('freeSmileBtn');
+        const isOpen = panel.style.display !== 'none';
+
+        if (isOpen) {
+            panel.style.display = 'none';
+            btn.style.opacity   = '0.7';
+            btn.style.transform = '';
+        } else {
+            panel.style.display = 'block';
+            btn.style.opacity   = '1';
+            btn.style.transform = 'scale(1.15)';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (!freeSmilesPanelBuilt) {
+                const grid = document.getElementById('freeSmileGrid');
+                FREE_SMILES.forEach(name => {
+                    const group = document.createElement('div');
+                    group.className = 'code-group';
+
+                    const spriteContainer = document.createElement('div');
+                    spriteContainer.className = 'sprite-container';
+                    spriteContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/></svg>`;
+
+                    const img = document.createElement('img');
+                    img.className = 'sprite-image';
+                    img.loading = 'eager';
+                    img.decoding = 'sync';
+                    spriteContainer.appendChild(img);
+
+                    const codigoText = `(${name})`;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'code-input';
+                    input.value = codigoText;
+                    input.readOnly = true;
+
+                    const btnCopy = document.createElement('button');
+                    btnCopy.className = 'btn-action';
+                    btnCopy.textContent = 'Copiar';
+                    btnCopy.onclick = () => {
+                        try {
+                            const tmp = document.createElement('input');
+                            tmp.value = codigoText;
+                            document.body.appendChild(tmp);
+                            tmp.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tmp);
+                            btnCopy.textContent = '¡Copiado!';
+                            btnCopy.style.backgroundColor = 'var(--success)';
+                            btnCopy.style.color = 'white';
+                        } catch {
+                            btnCopy.textContent = 'Error';
+                            btnCopy.style.color = 'var(--danger-text)';
+                        }
+                        setTimeout(() => {
+                            btnCopy.textContent = 'Copiar';
+                            btnCopy.style.backgroundColor = '';
+                            btnCopy.style.color = 'var(--primary)';
+                        }, 1500);
+                    };
+
+                    group.appendChild(spriteContainer);
+                    group.appendChild(input);
+                    group.appendChild(btnCopy);
+                    grid.appendChild(group);
+
+                    LOAD_QUEUE.push({
+                        img,
+                        url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`
+                    });
+                    processQueue();
+                });
+                freeSmilesPanelBuilt = true;
+            }
+        }
+    }
+
+    document.getElementById('freeSmileBtn').addEventListener('click', toggleFreeSmiles);
+
+</script>
+</body>
+</html>
