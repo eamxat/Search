@@ -28,6 +28,25 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* Bloquear selección de texto en toda la página */
+        body, .card, .card-header, .card-title, table, th, td,
+        .badge, .codes-grid, .code-group, .btn-action, .btn-search,
+        .refresh-btn, .theme-btn, footer, .footer-subtext,
+        .autocomplete-item, #freeSmilePanel, .search-container {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Permitir selección solo en los inputs de código (para copiar) */
+        .code-input, #searchInput {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-body);
@@ -372,6 +391,79 @@
         [data-theme="dark"] .autocomplete-badge-col {
             background: #713f12;
             color: #fef08a;
+        }
+
+        /* ─── RESPONSIVE MÓVIL ───────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            body { padding: 12px 10px; }
+
+            .search-container {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .search-container > img { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
+
+            .search-input-wrapper { max-width: 100%; order: 3; flex: 1 1 100%; }
+
+            .btn-search { order: 4; flex: 1; font-size: 14px; padding: 10px 16px; }
+
+            #refreshBtn, #themeBtn, #freeSmileBtn { order: 2; }
+
+            .card { padding: 16px 12px; border-radius: 12px; }
+
+            .card-title { font-size: 1.05rem; }
+
+            /* Tabla: scroll horizontal suave */
+            .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            table { font-size: 13px; }
+            th, td { padding: 10px 8px; }
+
+            /* Columnas no esenciales: ocultar en móvil muy pequeño */
+            @media (max-width: 480px) {
+                #th-collection, #cell-collection { display: none !important; }
+            }
+
+            /* Tarjetas de smiles: más pequeñas en móvil */
+            .code-group { width: 110px; }
+
+            .sprite-container {
+                width: 60px !important;
+                height: 60px !important;
+                min-width: 60px !important;
+                min-height: 60px !important;
+            }
+
+            .code-input { font-size: 12px; padding: 8px 10px; }
+
+            .btn-action { font-size: 12px; padding: 8px 12px; }
+
+            /* Autocomplete */
+            .autocomplete-items { max-height: 220px; }
+            .autocomplete-item { padding: 8px 12px; font-size: 14px; }
+
+            /* Panel smiles gratuitas header */
+            #freeSmilePanel .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+            /* Códigos grid: centrado */
+            .codes-grid { gap: 10px; }
+
+            /* Footer */
+            footer { margin-top: 24px; padding: 12px; }
+
+            /* Botón cerrar panel en móvil */
+            #freeSmilePanel .card-header button { align-self: flex-end; }
+        }
+
+        @media (max-width: 380px) {
+            .code-group { width: 95px; }
+            .sprite-container {
+                width: 50px !important;
+                height: 50px !important;
+                min-width: 50px !important;
+                min-height: 50px !important;
+            }
+            .code-input { font-size: 11px; }
         }
     </style>
 </head>
@@ -922,9 +1014,21 @@
             colImg.style.height = '40px';
             colImg.style.objectFit = 'contain';
             colImg.style.display = 'inline-block';
-            colImg.style.opacity = '1';
-            colImg.style.visibility = 'visible';
-            colImg.src = colImgUrl;
+            colImg.style.opacity = '0';
+            colImg.style.visibility = 'hidden';
+            // Usar cola de carga con fallback a gs.xat.com si GetStrip8 falla
+            LOAD_QUEUE.push({
+                img: colImg,
+                url: colImgUrl,
+                onFail: () => {
+                    LOAD_QUEUE.push({
+                        img: colImg,
+                        url: `https://gs.xat.com/a_(${encodeURIComponent(item.ParentCollection.name)})_40`
+                    });
+                    processQueue();
+                }
+            });
+            processQueue();
             const colName = document.createElement('div');
             colName.textContent = item.ParentCollection.name;
             colName.style.cssText = 'font-size:12px;font-weight:700;color:#854d0e;margin-top:4px;text-transform:capitalize;';
@@ -957,6 +1061,13 @@
         tImg.style.cursor = 'pointer';
         tImg.title = `Ver ${item.name} en la wiki de xat`;
         tImg.addEventListener('click', () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank'));
+        // Fallback si GetStrip8 falla: intentar con gs.xat.com
+        tImg.addEventListener('error', function onErr() {
+            const fallbackUrl = `https://gs.xat.com/a_(${encodeURIComponent(primerSmiley || item.name)})_40`;
+            if (!tImg.src.includes('gs.xat.com')) {
+                tImg.src = fallbackUrl;
+            }
+        });
         mainImageContainer.appendChild(tImg);
         // Aro de enlace visual al hacer hover
         mainImageContainer.style.cursor = 'pointer';
@@ -1014,8 +1125,8 @@
                 pawnsGrid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">No active pawns</p>';
             } else {
                 filteredPawns.forEach((pawn) => {
-                    const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(pawn.name)})_80`;
-                    createImageCard(pawn.name, imgUrl, pawn.hat, pawnsGrid);
+                    const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
+                    createImageCard(pawn.name, imgUrl, pawn.hat, pawnsGrid, true);
                 });
             }
         } else {
@@ -1066,7 +1177,7 @@
                 collectionRequiredCard.style.display = 'block';
                 required.forEach((powerName) => {
                     const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(powerName)})_80`;
-                    createImageCard(powerName, imgUrl, powerName, collectionRequiredGrid);
+                    createImageCard(powerName, imgUrl, `(${powerName})`, collectionRequiredGrid);
                 });
             } else {
                 collectionRequiredCard.style.display = 'none';
