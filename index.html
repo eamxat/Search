@@ -683,9 +683,19 @@
                     // _80 falló → intentar _40 (mismo nombre, mismo case)
                     LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail, smallPawn });
                 } else if (url.includes('_40')) {
-                    // ── CHANGE 3: if smallPawn, stop at _40 failure — don't go to _20 ──
-                    if (smallPawn) {
+                    // ── CHANGE 3: if smallPawn and NOT a p1 pawn, stop at _40 — don't go to _20 ──
+                    const isP1Pawn = /a_\(p1/i.test(url);
+                    if (smallPawn && !isP1Pawn) {
                         if (onFail) onFail(); else img.style.display = "none";
+                    } else if (smallPawn && isP1Pawn && rawName) {
+                        // p1 pawn: último intento con GetStrip8 preservando nombre original
+                        LOAD_QUEUE.push({
+                            img,
+                            url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`,
+                            onLoad,
+                            onFail,
+                            smallPawn
+                        });
                     } else {
                         // _40 falló → intentar _20 (mismo nombre, mismo case)
                         LOAD_QUEUE.push({ img, url: url.replace('_40', '_20'), onLoad, onFail, smallPawn });
