@@ -640,7 +640,8 @@
         if (activeLoads >= MAX_CONCURRENT || LOAD_QUEUE.length === 0) return;
         const job = LOAD_QUEUE.shift();
         activeLoads++;
-        const { img, url, onLoad, onFail } = job;
+        // ── CHANGE 1: destructure smallPawn from job ──
+        const { img, url, onLoad, onFail, smallPawn } = job;
         img.style.opacity = "0";
         img.style.visibility = "hidden";
         const newImg = new Image();
@@ -659,39 +660,44 @@
                 if (match) {
                     const pawnName = match[1];
                     const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
-                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`, onLoad, onFail });
+                    // ── CHANGE 2: propagate smallPawn flag in fallback chain ──
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`, onLoad, onFail, smallPawn });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
                 }
             } else if (url.includes('GetStrip8') && url.includes('_80') && !url.includes('p1')) {
-                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
+                LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail, smallPawn });
             } else if (url.includes('GetStrip8') && url.includes('_40') && !url.includes('p1')) {
                 const m = url.match(/c=a_%28(.+?)%29/i) || url.match(/c=a_\((.+?)\)/i);
                 if (m) {
-                    // Intentar con lowercase como último recurso
                     const lower = decodeURIComponent(m[1]).toLowerCase();
-                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${encodeURIComponent(lower)})_20`, onLoad, onFail });
+                    LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(${encodeURIComponent(lower)})_20`, onLoad, onFail, smallPawn });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
                 }
             } else if (url.includes('gs.xat.com')) {
-                // Extraer nombre del peón preservando capitalización original
                 const nameMatch = url.match(/a_\((.+?)\)_/i);
                 const rawName = nameMatch ? nameMatch[1] : null;
 
                 if (url.includes('_80')) {
                     // _80 falló → intentar _40 (mismo nombre, mismo case)
-                    LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail });
+                    LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail, smallPawn });
                 } else if (url.includes('_40')) {
-                    // _40 falló → intentar _20 (mismo nombre, mismo case)
-                    LOAD_QUEUE.push({ img, url: url.replace('_40', '_20'), onLoad, onFail });
+                    // ── CHANGE 3: if smallPawn, stop at _40 failure — don't go to _20 ──
+                    if (smallPawn) {
+                        if (onFail) onFail(); else img.style.display = "none";
+                    } else {
+                        // _40 falló → intentar _20 (mismo nombre, mismo case)
+                        LOAD_QUEUE.push({ img, url: url.replace('_40', '_20'), onLoad, onFail, smallPawn });
+                    }
                 } else if (url.includes('_20') && rawName) {
                     // _20 también falló → último intento con GetStrip8 _40 preservando nombre original
                     LOAD_QUEUE.push({
                         img,
                         url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`,
                         onLoad,
-                        onFail
+                        onFail,
+                        smallPawn
                     });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
@@ -722,8 +728,9 @@
         newImg.src = url;
     }
 
-    function forceLoadImage(img, url) {
-        LOAD_QUEUE.push({ img, url });
+    // ── CHANGE 4: forceLoadImage accepts optional smallPawn flag ──
+    function forceLoadImage(img, url, smallPawn = false) {
+        LOAD_QUEUE.push({ img, url, smallPawn });
         processQueue();
     }
 
@@ -738,6 +745,7 @@
     const getBadge = (val, style = 'info') =>
         `badge ${val === 'N/A' ? 'badge-neutral' : `badge-${style}`}`;
 
+    // ── CHANGE 5: createImageCard passes smallPawn flag to forceLoadImage ──
     function createImageCard(nombre, imgUrl, codigoText, container, smallPawn = false) {
         const group = document.createElement('div');
         group.className = 'code-group';
@@ -757,7 +765,7 @@
         }
         spriteContainer.appendChild(img);
 
-        forceLoadImage(img, imgUrl);
+        forceLoadImage(img, imgUrl, smallPawn);
 
         const input = document.createElement('input');
         input.type = 'text';
@@ -1076,7 +1084,8 @@
         if (item.IsPowerSearch && item.name.toLowerCase() === 'everypower') {
             coloringCard.style.display = 'block';
             EVERYPOWER_COLORING.forEach((pawn) => {
-                const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
+                // ── CHANGE 6: Everypower coloring uses _80 for consistent size ──
+                const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_80`;
                 createImageCard(pawn.name, imgUrl, pawn.hat, coloringGrid, true);
             });
         } else {
