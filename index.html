@@ -30,7 +30,7 @@
 
         body, .card, .card-header, .card-title, table, th, td,
         .badge, .codes-grid, .code-group, .btn-action, .btn-search,
-        .refresh-btn, .theme-btn, footer, .footer-subtext,
+        .refresh-btn, .theme-btn, .lang-btn, footer, .footer-subtext,
         .autocomplete-item, #freeSmilePanel, .search-container {
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -102,15 +102,41 @@
 
         .btn-search:hover { background-color: var(--primary-hover); }
 
-        .refresh-btn {
+        .refresh-btn, .theme-btn {
             background: transparent;
             border: none;
             font-size: 18px;
             cursor: pointer;
             opacity: 0.6;
+            transition: var(--transition);
+        }
+        
+        .theme-btn { margin-left: 5px; }
+        .refresh-btn:hover, .theme-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Botón de Idioma posicionado junto al Planeta */
+        .lang-btn {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-color);
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
+            padding: 0 12px;
+            height: 48px; /* Misma altura que el planeta */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .refresh-btn:hover { opacity: 1; }
+        .lang-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
 
         .autocomplete-items {
             position: absolute;
@@ -158,18 +184,6 @@
             padding: 2px;
         }
 
-        .theme-btn {
-            background: transparent;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            opacity: 0.6;
-            margin-left: 5px;
-            transition: var(--transition);
-        }
-
-        .theme-btn:hover { opacity: 1; transform: scale(1.1); }
-
         [data-theme="dark"] {
             --bg-body: #111827;
             --bg-card: #1f2937;
@@ -195,6 +209,8 @@
         [data-theme="dark"] .autocomplete-item { color: var(--text-main); border-bottom-color: var(--border-color); }
         [data-theme="dark"] .autocomplete-item:hover { background-color: var(--bg-body); }
         [data-theme="dark"] .autocomplete-img { background-color: var(--bg-body); }
+        [data-theme="dark"] .lang-btn { background-color: var(--bg-card); border-color: var(--border-color); color: var(--text-main); }
+        [data-theme="dark"] .lang-btn:hover { border-color: var(--primary); color: var(--primary); }
 
         .card {
             background-color: var(--bg-card);
@@ -392,23 +408,15 @@
         @media (max-width: 768px) {
             body { padding: 12px 10px; }
 
-            .search-container {
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-
-            .search-container > img { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
-
+            .search-container { flex-wrap: wrap; gap: 8px; }
+            #langBtn { order: 1; height: 40px; font-size: 12px; }
+            #planetBtn { order: 2; width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; }
             .search-input-wrapper { max-width: 100%; order: 3; flex: 1 1 100%; }
-
-            .btn-search { order: 4; flex: 1; font-size: 14px; padding: 10px 16px; }
-
+            .btn-search { order: 4; flex: 1 1 100%; font-size: 14px; padding: 10px 16px; }
             #refreshBtn, #themeBtn, #freeSmileBtn { order: 2; }
-
+            
             .card { padding: 16px 12px; border-radius: 12px; }
-
             .card-title { font-size: 1.05rem; }
-
             .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
             table { font-size: 13px; }
             th, td { padding: 10px 8px; }
@@ -418,38 +426,20 @@
             }
 
             .code-group { width: 110px; }
-
-            .sprite-container {
-                width: 60px !important;
-                height: 60px !important;
-                min-width: 60px !important;
-                min-height: 60px !important;
-            }
-
+            .sprite-container { width: 60px !important; height: 60px !important; min-width: 60px !important; min-height: 60px !important; }
             .code-input { font-size: 12px; padding: 8px 10px; }
-
             .btn-action { font-size: 12px; padding: 8px 12px; }
-
             .autocomplete-items { max-height: 220px; }
             .autocomplete-item { padding: 8px 12px; font-size: 14px; }
-
             #freeSmilePanel .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-
             .codes-grid { gap: 10px; }
-
             footer { margin-top: 24px; padding: 12px; }
-
             #freeSmilePanel .card-header button { align-self: flex-end; }
         }
 
         @media (max-width: 380px) {
             .code-group { width: 95px; }
-            .sprite-container {
-                width: 50px !important;
-                height: 50px !important;
-                min-width: 50px !important;
-                min-height: 50px !important;
-            }
+            .sprite-container { width: 50px !important; height: 50px !important; min-width: 50px !important; min-height: 50px !important; }
             .code-input { font-size: 11px; }
         }
     </style>
@@ -458,15 +448,23 @@
 <div class="container">
 
     <form id="searchForm" class="search-container">
+        <!-- Botón de Traducción (Misma línea, a la izquierda del planeta) -->
+        <button type="button" id="langBtn" class="lang-btn" data-i18n-title="langTitle" title="Cambiar idioma">EN</button>
+        
+        <!-- Ícono del Planeta -->
         <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" id="planetBtn" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;cursor:pointer;transition:transform 0.2s,opacity 0.2s;" title="Volver al inicio">
+        
         <div class="search-input-wrapper">
-            <input type="text" id="searchInput" class="search-input" placeholder=".e.j" required autocomplete="off">
+            <input type="text" id="searchInput" class="search-input" data-i18n-placeholder="searchPlaceholder" placeholder=".e.j" required autocomplete="off">
             <div id="autocompleteList" class="autocomplete-items"></div>
         </div>
-        <button type="submit" class="btn-search">BUSCAR</button>
-        <button type="button" id="refreshBtn" class="refresh-btn" title="Recargar imágenes">⟳</button>
-        <button type="button" id="themeBtn" class="theme-btn" title="Alternar modo oscuro">🌙</button>
-        <button type="button" id="freeSmileBtn" title="Smiles gratuitas de xat" style="background:transparent;border:none;cursor:pointer;padding:0;opacity:0.7;transition:opacity 0.2s,transform 0.2s;display:flex;align-items:center;">
+        
+        <button type="submit" class="btn-search" data-i18n="searchBtn">BUSCAR</button>
+        
+        <button type="button" id="refreshBtn" class="refresh-btn" data-i18n-title="reloadTitle" title="Recargar imágenes">⟳</button>
+        <button type="button" id="themeBtn" class="theme-btn" data-i18n-title="themeTitle" title="Alternar modo oscuro">🌙</button>
+        
+        <button type="button" id="freeSmileBtn" data-i18n-title="freeSmilesTitle1" title="Smiles gratuitas de xat" style="background:transparent;border:none;cursor:pointer;padding:0;margin-left:5px;opacity:0.7;transition:opacity 0.2s,transform 0.2s;display:flex;align-items:center;">
             <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:28px;height:28px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
         </button>
     </form>
@@ -477,58 +475,47 @@
             <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <img src="https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(smile)_80" style="width:24px;height:24px;object-fit:contain;image-rendering:auto;" onerror="this.src='https://i.imgur.com/Un8kz4J.png'">
-                    <h2 class="card-title">Smiles gratuitas de xat</h2>
-                    <span style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
+                    <h2 class="card-title" data-i18n="freeSmilesTitle2">Smiles gratuitas de xat</h2>
+                    <span data-i18n="freeBadge" style="background:var(--info-bg);color:var(--info-text);font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Gratis</span>
                 </div>
-                <button onclick="toggleFreeSmiles()" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
+                <button onclick="toggleFreeSmiles()" data-i18n="closeBtn" style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;font-weight:600;">✕ Cerrar</button>
             </div>
             <div id="freeSmileGrid" class="codes-grid"></div>
             <style>
-                #freeSmileGrid .sprite-container {
-                    width: 80px !important;
-                    height: 80px !important;
-                    min-width: 80px !important;
-                    min-height: 80px !important;
-                }
-                #freeSmileGrid .sprite-image {
-                    width: auto !important;
-                    height: auto !important;
-                    max-width: 80px !important;
-                    max-height: 80px !important;
-                    object-fit: contain !important;
-                }
+                #freeSmileGrid .sprite-container { width: 80px !important; height: 80px !important; min-width: 80px !important; min-height: 80px !important; }
+                #freeSmileGrid .sprite-image { width: auto !important; height: auto !important; max-width: 80px !important; max-height: 80px !important; object-fit: contain !important; }
             </style>
         </div>
     </div>
 
     <div id="loader" class="loader-container">
         <div class="spinner"></div>
-        <p style="color:var(--text-muted);font-weight:600;">Extrayendo datos...</p>
+        <p style="color:var(--text-muted);font-weight:600;" data-i18n="extracting">Extrayendo datos...</p>
     </div>
 
     <div id="errorState" class="error-container">
-        <p id="errorMessage">Ha ocurrido un error.</p>
+        <p id="errorMessage" data-i18n="errorMsg">Ha ocurrido un error.</p>
     </div>
 
     <div id="dashboardContent">
 
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Información sobre el power</h2>
+                <h2 class="card-title" data-i18n="powerInfo">Información sobre el power</h2>
             </div>
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Imagen</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Estatus</th>
-                            <th>Store Status</th>
-                            <th>Precio</th>
-                            <th>Precio en Trade/Cambio</th>
-                            <th id="th-collection" style="display:none;">Colección</th>
+                            <th data-i18n="thId">ID</th>
+                            <th data-i18n="thImg">Imagen</th>
+                            <th data-i18n="thName">Nombre</th>
+                            <th data-i18n="thDesc">Descripción</th>
+                            <th data-i18n="thStatus">Estatus</th>
+                            <th data-i18n="thStoreStatus">Store Status</th>
+                            <th data-i18n="thPrice">Precio</th>
+                            <th data-i18n="thTrade">Precio en Trade/Cambio</th>
+                            <th id="th-collection" style="display:none;" data-i18n="thCol">Colección</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -550,66 +537,62 @@
             </div>
         </div>
 
-        <!-- SECCIÓN STICKERS -->
         <div class="card" id="stickersCard" style="display:none;">
             <div class="card-header">
-                <h2 class="card-title">Stickers del power</h2>
+                <h2 class="card-title" data-i18n="stickersCardTitle">Stickers del power</h2>
             </div>
             <div id="stickersGrid" class="codes-grid"></div>
         </div>
 
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Smiles del power</h2>
+                <h2 class="card-title" data-i18n="smilesCardTitle">Smiles del power</h2>
             </div>
             <div id="codesContainer" class="codes-grid"></div>
         </div>
 
         <div class="card" id="pawnsCard" style="display:none;">
             <div class="card-header">
-                <h2 class="card-title">Active Pawns</h2>
+                <h2 class="card-title" data-i18n="activePawnsTitle">Active Pawns</h2>
             </div>
             <div id="pawnsGrid" class="codes-grid"></div>
         </div>
 
         <div class="card" id="coloringCard" style="display:none;">
             <div class="card-header">
-                <h2 class="card-title">Coloring</h2>
+                <h2 class="card-title" data-i18n="coloringTitle">Coloring</h2>
             </div>
             <div id="coloringGrid" class="codes-grid"></div>
         </div>
 
         <div class="card" id="hatsCard" style="display:none;">
             <div class="card-header">
-                <h2 class="card-title">HATS / Limited Pawns</h2>
+                <h2 class="card-title" data-i18n="hatsTitle">HATS / Limited Pawns</h2>
             </div>
             <div id="hatsGrid" class="codes-grid"></div>
         </div>
 
-        <!-- SECCIÓN COLECCIÓN: Powers Requeridos -->
         <div class="card" id="collectionRequiredCard" style="display:none;">
             <div class="card-header" style="display:flex;align-items:center;gap:10px;">
-                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
-                <h2 class="card-title">Powers requeridos</h2>
+                <span data-i18n="thColBadge" style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <h2 class="card-title" data-i18n="reqPowersTitle">Powers requeridos</h2>
             </div>
             <div id="collectionRequiredGrid" class="codes-grid"></div>
         </div>
 
-        <!-- SECCIÓN COLECCIÓN: Peones de Colección -->
         <div class="card" id="collectionPawnsCard" style="display:none;">
             <div class="card-header" style="display:flex;align-items:center;gap:10px;">
-                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
-                <h2 class="card-title">Peones de la colección</h2>
+                <span data-i18n="thColBadge" style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <h2 class="card-title" data-i18n="colPawnsTitle">Peones de la colección</h2>
             </div>
             <div id="collectionPawnsGrid" class="codes-grid"></div>
         </div>
 
-        <!-- SECCIÓN: Peones de la colección padre -->
         <div class="card" id="parentCollectionPawnsCard" style="display:none;">
             <div class="card-header" style="display:flex;align-items:center;gap:10px;">
-                <span style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
+                <span data-i18n="thColBadge" style="background:#fef9c3;color:#854d0e;font-size:11px;font-weight:700;padding:3px 10px;border-radius:9999px;text-transform:uppercase;letter-spacing:0.05em;">Colección</span>
                 <h2 class="card-title" id="parentCollectionPawnsTitle">Peones de la colección</h2>
-                <span id="parentCollectionPawnsLoader" style="display:none;font-size:12px;color:var(--text-muted);margin-left:8px;">Cargando...</span>
+                <span id="parentCollectionPawnsLoader" style="display:none;font-size:12px;color:var(--text-muted);margin-left:8px;" data-i18n="loading">Cargando...</span>
             </div>
             <div id="parentCollectionPawnsGrid" class="codes-grid"></div>
         </div>
@@ -620,7 +603,7 @@
         <img src="https://raw.githubusercontent.com/eamxat/Images/eadff6fb6a652a50f58fe4e9445e00a0b23f23d5/xatlogo%20text.svg"
              alt="Xat Logo"
              style="height:40px;margin:0 auto;display:block;opacity:0.8;min-width:auto;min-height:auto;">
-        <div class="footer-subtext">Xat Powers Data - Free tool Created by: EAM96</div>
+        <div class="footer-subtext" data-i18n="footerText">Xat Powers Data - Free tool Created by: EAM96</div>
     </footer>
 
 </div>
@@ -632,6 +615,103 @@
         if (e.ctrlKey && e.key.toUpperCase() === 'U') e.preventDefault();
     });
 
+    // ============================================================
+    // SISTEMA DE TRADUCCIÓN (i18n)
+    // ============================================================
+    const i18n = {
+        es: {
+            searchPlaceholder: ".e.j", searchBtn: "BUSCAR", reloadTitle: "Recargar imágenes", themeTitle: "Alternar modo oscuro",
+            langTitle: "Cambiar idioma", freeSmilesTitle1: "Smiles gratuitas de xat", freeSmilesTitle2: "Smiles gratuitas de xat",
+            freeBadge: "Gratis", closeBtn: "✕ Cerrar", extracting: "Extrayendo datos...", errorMsg: "Ha ocurrido un error.",
+            powerInfo: "Información sobre el power", thId: "ID", thImg: "Imagen", thName: "Nombre", thDesc: "Descripción",
+            thStatus: "Estatus", thStoreStatus: "Store Status", thPrice: "Precio", thTrade: "Precio en Trade/Cambio",
+            thCol: "Colección", stickersCardTitle: "Stickers del power", smilesCardTitle: "Smiles del power",
+            activePawnsTitle: "Active Pawns", coloringTitle: "Coloring", hatsTitle: "HATS / Limited Pawns",
+            reqPowersTitle: "Powers requeridos", colPawnsTitle: "Peones de la colección",
+            loading: "Cargando...", footerText: "Xat Powers Data - Free tool Created by: EAM96",
+            copy: "Copiar", copied: "¡Copiado!", error: "Error", noActivePawns: "No active pawns",
+            noPawnsAvail: "Sin peones disponibles", viewPawnsOf: "Ver peones de", viewOnWiki: "Ver {p} en la wiki de xat",
+            pawnsOf: "Peones de", errorLoadingPawns: "Error al cargar los peones.", thColBadge: "Colección",
+            errorNotFound: "Poder no encontrado.", errorApiFailed: "Error {code}: Poder no encontrado o API falló.",
+            colBadge: "Colección"
+        },
+        en: {
+            searchPlaceholder: "e.g.", searchBtn: "SEARCH", reloadTitle: "Reload images", themeTitle: "Toggle dark mode",
+            langTitle: "Change language", freeSmilesTitle1: "Free xat smiles", freeSmilesTitle2: "Free xat smiles",
+            freeBadge: "Free", closeBtn: "✕ Close", extracting: "Extracting data...", errorMsg: "An error occurred.",
+            powerInfo: "Power information", thId: "ID", thImg: "Image", thName: "Name", thDesc: "Description",
+            thStatus: "Status", thStoreStatus: "Store Status", thPrice: "Price", thTrade: "Trade Price",
+            thCol: "Collection", stickersCardTitle: "Power stickers", smilesCardTitle: "Power smiles",
+            activePawnsTitle: "Active Pawns", coloringTitle: "Coloring", hatsTitle: "HATS / Limited Pawns",
+            reqPowersTitle: "Required powers", colPawnsTitle: "Collection pawns",
+            loading: "Loading...", footerText: "Xat Powers Data - Free tool Created by: EAM96",
+            copy: "Copy", copied: "Copied!", error: "Error", noActivePawns: "No active pawns",
+            noPawnsAvail: "No pawns available", viewPawnsOf: "View pawns of", viewOnWiki: "View {p} on xat wiki",
+            pawnsOf: "Pawns of", errorLoadingPawns: "Error loading pawns.", thColBadge: "Collection",
+            errorNotFound: "Power not found.", errorApiFailed: "Error {code}: Power not found or API failed.",
+            colBadge: "Collection"
+        }
+    };
+
+    let currentLang = localStorage.getItem('app_lang') || 'es';
+
+    function t(key) { return i18n[currentLang][key] || key; }
+
+    function updateLanguageUI() {
+        // Textos estáticos y con data-i18n dinámico post-render
+        document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.getAttribute('data-i18n')));
+        document.querySelectorAll('[data-i18n-title]').forEach(el => el.title = t(el.getAttribute('data-i18n-title')));
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-placeholder')));
+        
+        const langBtn = document.getElementById('langBtn');
+        if(langBtn) langBtn.textContent = currentLang === 'es' ? 'EN' : 'ES';
+
+        // Actualización de botones copiadores
+        const btnActions = document.querySelectorAll('.btn-action');
+        btnActions.forEach(btn => { if(btn.textContent === i18n[currentLang==='es'?'en':'es'].copy) btn.textContent = t('copy'); });
+        
+        // Título de la tarjeta dinámica
+        const card = document.getElementById('parentCollectionPawnsCard');
+        if (card && card.style.display !== 'none' && card.dataset.loaded) {
+            const l = card.dataset.loaded;
+            document.getElementById('parentCollectionPawnsTitle').textContent = t('pawnsOf') + ' ' + l.charAt(0).toUpperCase() + l.slice(1);
+        }
+        
+        // Tooltips dinámicos post-fetch
+        const currentPowerName = document.getElementById('cell-name')?.textContent;
+        if (currentPowerName) {
+            const mainImg = document.querySelector('#mainImageContainer img');
+            if (mainImg) mainImg.title = t('viewOnWiki').replace('{p}', currentPowerName);
+        }
+
+        const cellCollectionWrap = document.querySelector('#cell-collection div');
+        if (cellCollectionWrap) {
+            const colName = cellCollectionWrap.querySelector('div')?.textContent;
+            if(colName) cellCollectionWrap.title = t('viewPawnsOf') + ' ' + colName;
+        }
+
+        // Manejo de errores dinámicos
+        const errorMsgEl = document.getElementById('errorMessage');
+        if (errorMsgEl && errorMsgEl.hasAttribute('data-i18n-error')) {
+            const key = errorMsgEl.getAttribute('data-i18n-error');
+            const param = errorMsgEl.getAttribute('data-i18n-param');
+            if (param) {
+                errorMsgEl.textContent = t(key).replace('{code}', param);
+            } else {
+                errorMsgEl.textContent = t(key);
+            }
+        }
+    }
+
+    document.getElementById('langBtn').addEventListener('click', () => {
+        currentLang = currentLang === 'es' ? 'en' : 'es';
+        localStorage.setItem('app_lang', currentLang);
+        updateLanguageUI();
+    });
+
+    // ============================================================
+    //  SISTEMA DE CARGA DE IMÁGENES
+    // ============================================================
     let LOAD_QUEUE = [];
     let activeLoads = 0;
     const MAX_CONCURRENT = 6;
@@ -640,8 +720,9 @@
         if (activeLoads >= MAX_CONCURRENT || LOAD_QUEUE.length === 0) return;
         const job = LOAD_QUEUE.shift();
         activeLoads++;
-        // ── CHANGE 1: destructure smallPawn from job ──
-        const { img, url, onLoad, onFail, smallPawn } = job;
+        
+        // noAutoFallback desactiva el fallback genérico y permite el estricto
+        const { img, url, onLoad, onFail, smallPawn, noAutoFallback } = job;
         img.style.opacity = "0";
         img.style.visibility = "hidden";
         const newImg = new Image();
@@ -655,12 +736,19 @@
         };
 
         const fallback = () => {
+            // Regla estricta para smiles gratuitas: Solo intenta la orden directa. Si falla, corta el flujo.
+            if (noAutoFallback) {
+                if (onFail) onFail(); else img.style.display = "none";
+                done();
+                return;
+            }
+
+            // Fallbacks normales de la app
             if (url.includes('GetStrip8') && url.includes('p1')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
                     const pawnName = match[1];
                     const capitalized = pawnName.charAt(0).toUpperCase() + pawnName.slice(1);
-                    // ── CHANGE 2: propagate smallPawn flag in fallback chain ──
                     LOAD_QUEUE.push({ img, url: `https://gs.xat.com/a_(p1${encodeURIComponent(capitalized)})_40`, onLoad, onFail, smallPawn });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
@@ -680,35 +768,18 @@
                 const rawName = nameMatch ? nameMatch[1] : null;
 
                 if (url.includes('_80')) {
-                    // _80 falló → intentar _40 (mismo nombre, mismo case)
                     LOAD_QUEUE.push({ img, url: url.replace('_80', '_40'), onLoad, onFail, smallPawn });
                 } else if (url.includes('_40')) {
-                    // ── CHANGE 3: if smallPawn and NOT a p1 pawn, stop at _40 — don't go to _20 ──
                     const isP1Pawn = /a_\(p1/i.test(url);
                     if (smallPawn && !isP1Pawn) {
                         if (onFail) onFail(); else img.style.display = "none";
                     } else if (smallPawn && isP1Pawn && rawName) {
-                        // p1 pawn: último intento con GetStrip8 preservando nombre original
-                        LOAD_QUEUE.push({
-                            img,
-                            url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`,
-                            onLoad,
-                            onFail,
-                            smallPawn
-                        });
+                        LOAD_QUEUE.push({ img, url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`, onLoad, onFail, smallPawn });
                     } else {
-                        // _40 falló → intentar _20 (mismo nombre, mismo case)
                         LOAD_QUEUE.push({ img, url: url.replace('_40', '_20'), onLoad, onFail, smallPawn });
                     }
                 } else if (url.includes('_20') && rawName) {
-                    // _20 también falló → último intento con GetStrip8 _40 preservando nombre original
-                    LOAD_QUEUE.push({
-                        img,
-                        url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`,
-                        onLoad,
-                        onFail,
-                        smallPawn
-                    });
+                    LOAD_QUEUE.push({ img, url: `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(rawName)})_40`, onLoad, onFail, smallPawn });
                 } else {
                     if (onFail) onFail(); else img.style.display = "none";
                 }
@@ -734,16 +805,306 @@
         };
 
         newImg.onerror = () => { clearTimeout(timeout); fallback(); };
-
         newImg.src = url;
     }
 
-    // ── CHANGE 4: forceLoadImage accepts optional smallPawn flag ──
     function forceLoadImage(img, url, smallPawn = false) {
         LOAD_QUEUE.push({ img, url, smallPawn });
         processQueue();
     }
 
+    // ============================================================
+    //  SISTEMA DE SUGERENCIAS DINÁMICO Y GLOBAL
+    // ============================================================
+    let allPowersList = [];
+    const _seenNames  = new Set();
+
+    function _addEntry(name, isCollection = false) {
+        if (typeof name !== 'string') return;
+        const clean = name.trim().toLowerCase();
+        // Evitamos añadir textos aleatorios (forzamos que parezca un nombre de power válido)
+        if (!/^[a-z0-9_-]{2,40}$/i.test(clean) || !/[a-z]/i.test(clean)) return;
+        
+        if (_seenNames.has(clean)) {
+            if (isCollection) {
+                const ex = allPowersList.find(e => e.name === clean);
+                if (ex) ex.isCollection = true;
+            }
+            return;
+        }
+        _seenNames.add(clean);
+        allPowersList.push({ name: clean, isCollection });
+    }
+
+    async function _fetchSafe(url) {
+        try {
+            const res = await fetch(url, { cache: 'no-store' });
+            if (!res.ok) return null;
+            return await res.json();
+        } catch { return null; }
+    }
+
+    // Función universal y 100% recursiva para atrapar CUALQUIER power de cualquier API
+    function _extractNamesRobustly(val) {
+        if (!val) return;
+        
+        // 1. Extraer si es string directo
+        if (typeof val === 'string') {
+            const clean = val.trim().toLowerCase();
+            if (/^[a-z0-9_-]{2,40}$/i.test(clean) && /[a-z]/i.test(clean)) {
+                _addEntry(clean);
+            }
+            return;
+        }
+        
+        // 2. Si es array, recorrer iterativamente
+        if (Array.isArray(val)) {
+            val.forEach(_extractNamesRobustly);
+            return;
+        }
+        
+        // 3. Si es objeto, escaneo profundo
+        if (typeof val === 'object') {
+            // Buscamos claves específicas donde usualmente se esconden los nombres
+            if (typeof val.name === 'string') _extractNamesRobustly(val.name);
+            if (typeof val.Name === 'string') _extractNamesRobustly(val.Name);
+            if (typeof val.power === 'string') _extractNamesRobustly(val.power);
+            
+            // Recorremos absolutamente todos los sub-objetos buscando más datos
+            Object.values(val).forEach(v => {
+                if (typeof v === 'object' && v !== null) {
+                    _extractNamesRobustly(v);
+                }
+            });
+        }
+    }
+
+    async function loadPowerSuggestions() {
+        // Lanzamos las peticiones simultáneamente y unificamos en el array global
+        const [latestData, collectionData, illuxatListData, xatblogListData] = await Promise.allSettled([
+            _fetchSafe('https://illuxat.com/api/latestpower'),
+            _fetchSafe('https://api.xatblog.net/collectionlist'),
+            _fetchSafe('https://illuxat.com/api/power/list'),
+            _fetchSafe('https://api.xatblog.net/powersearch/a') // Fallback de apoyo
+        ]);
+
+        // FUENTE 1 y 3: Extracción recursiva profunda (Resuelve el problema de no ver el power hasta buscarlo)
+        if (latestData.status === 'fulfilled') _extractNamesRobustly(latestData.value);
+        if (illuxatListData.status === 'fulfilled') _extractNamesRobustly(illuxatListData.value);
+
+        // FUENTE 2: xatblog collectionlist
+        const colVal = collectionData.status === 'fulfilled' ? collectionData.value : null;
+        if (colVal && colVal.code === 200 && Array.isArray(colVal.powers)) {
+            colVal.powers.forEach(c => {
+                const n = c.name || c.Name;
+                if (n) _addEntry(n, true);
+            });
+        }
+
+        KNOWN_POWERS_BASE.forEach(n => _addEntry(n, false));
+        allPowersList.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Si el usuario estaba escribiendo mientras se cargaban los datos, lo actualizamos instantáneamente
+        const liveVal = document.getElementById('searchInput')?.value?.trim().toLowerCase();
+        if (liveVal) _triggerAutocomplete(liveVal);
+    }
+
+    const KNOWN_POWERS_BASE = [
+        "topman","subhide","mod8","zoom","nofollow","invert","mirror","noaudies",
+        "reghide","nopc","tempmod","hat","red","green","blue","light","heart",
+        "shuffle","animate","square","nameglow","cycle","hexagon","clear","boot",
+        "octogram","show","superkick","invisible","pink","guestself","sinbin",
+        "diamond","purple","ttth","hands","hairm","hairf","fade","gag","costumes",
+        "six","dood","angel","mute","radio","fruit","sport","num",
+        "hush","halloween","anime","status","thanksgiving","snowy","christmas",
+        "count","stick","dx","tempmem","valentine","blueman","party","irish",
+        "flashrank","easter","nopm","banish","circus","gkaoani","military","gline",
+        "bump","gkaliens","scifi","supporter","tempown","gcontrol","tickle","sea",
+        "silly","blastpro","flag","blastban","independence","blastde","summer",
+        "bad","rapid","horror","mint","blastkick","winter","adventure","feast",
+        "single","link",
+        "shocker","fairy","namecolor","gkbear","angry","gscol","ugly","love",
+        "barge","gkkitty","fantasy","announce","hero","rankpool","spin","animal",
+        "music","gkpanda","unwell","events","zap","sins","outfit","wildwest",
+        "work","banpool","beach","candy","gback","zodiac","flower","space",
+        "snakeban","stoneage","spaceban","dance","nerd","kpeng","matchban",
+        "school","silentm","punch","away","peace","kchick","carve","spooky",
+        "kdog","bot","manga","mazeban","gold","snowman","reindeer","santa",
+        "sparta","dunce","newyear","can",
+        "codeban","magicfx","spy","kduck","heartfx","carnival","topspin","movie",
+        "monster","kat","typing","ksheep","pulsefx","blobby","reverse","fuzzy",
+        "spiralfx","nursing","gsound","kbee","vortexfx","jail","zip","drip",
+        "moustache","whirlfx","doodlerace","olympic","aliens","matchrace",
+        "burningheart","snakerace","kpig","poker","pony","clockfx","drop",
+        "spacewar","speech","quest","glitterfx","quest2","lang","claus","treefx",
+        "vampyre","xavi","kmouse","eighties","foe","zombie","makeup","kheart",
+        "kmonkey","nuclear","stylist","vote","spring","eggs","hands2","hearts",
+        "kfox","kcow","sketch","led","seaside","hair2f","statusglow","super",
+        "wedding","cactus","switch","fourth","cuboid","phasefx","romance",
+        "marriage","sticky","kickall","darts","weather","kangel","kdemon",
+        "autumn","eggy","redirect","ani1","scary","halloween2","piracy","froggy",
+        "blackfriday","winterland","noel","toys","badge","celebrate","hogmanay",
+        "farm","divorce","arachnid","sweetheart","cupcake","ladybug","random",
+        "luck","tongues","springflix","snail","eventstats","easteregg",
+        "butterflies","springy","naughtystep","coffee","hamster","dreams",
+        "gamefx","worldcup","rocks","yellowcard","ballfx","winner","cutie",
+        "summerflix","statuscolor","coolz","magic","blubunni","instruments",
+        "pcback","bird","chocolate","kmoon","ksun","jump","trickortreat","creepy",
+        "manage","blueoni","icebucket","gamefx2","reveal","holidays","lunar",
+        "backup","size","egyptian","retro","jewelry","offset","amore","valfx",
+        "oids","birthday","supercycle","tv","clouds","beastie","easterlove",
+        "mobilebeta","eco","floral","shinobi","aliblue","gothic","redcard","pets",
+        "ceebear","aquatic","nick","shells","microbe","balloonfx","poke","me",
+        "transport","planets","lions","big","precious","glob","kandle","roosters",
+        "ranklock","kstar","allhallows","witch","tigers","beautifly","choirhug",
+        "sleighhug","ornaments","fireworkshug","masks","electricity","ricebowl",
+        "paints","lovemix","lovehug","mining","caterpillar","namegrad","patrick",
+        "ebunny","easterland","fools","songkran","onion","mom","koala","namewave",
+        "chores","animegirl","diva","tooth","worm","nameflag","aprincess",
+        "summerhug","kwolf","comics","popcorns","elephant","ten","spacejinx",
+        "meow","classic","boo","fall","graveyard","funfair","cadet","christmix",
+        "tropicalxmas","gobble","sparklefx","fireworksfx","battle","kaoears",
+        "x2d","mountain","lovemix2","lovefx","lovetest","kgiraffe","mousie","ruby",
+        "wish","spacefx","toad","foolsday","anichick","ribunny","kawaii","hedgehog",
+        "earth","eggie","rapidreason","neon","drawn","fishbowl","splashfx",
+        "ghostmon","broadcaster","minimon","fiesta","kloud","sline","cuticorn",
+        "nightmare","silentban","travel","puppy","firefx","flgpwn","owlie","octo",
+        "mark","skull","halloscroll","plants","yoga","fitness","pcbr","xmasscroll",
+        "kxmas","xmasfactory","flaghug","sqanimal","superblastban","superblastkick",
+        "dragons","samba","heartbreak","nuts","illusionfx","accessory","cups",
+        "patrickfx","rankscroll","hippos","bestfriend","kitcup","seasons","birdie",
+        "botstat","guineapig","baghead","hats","superanime","koffee","pizzas",
+        "portalfx","esmile","glitch","raccoons","supersummer","pcplus","silentg",
+        "glasses","muertos","superhalloween","kcar","piggy","appbot","swordfx",
+        "wigs","snowflake","superxmas","kactus","superboy","khair","marshie",
+        "valentinefx","superheart","trains","morph","fashion","skunk","meerkat",
+        "time","mime","superhobby","kbacks","easterfx","category","tshirt","fido",
+        "balloony","swimming","ahair","baby","nat","heat","creature","max",
+        "acting","couple","dinosaur","umbrella","mythy","hairb","workout","nin",
+        "fear","spookies","superscary","woodland","energyfx","kris","king",
+        "blacksale","neva","supersanta","revel","xmastime","puzzle","scamp",
+        "luvcat","ali","lovepotion","superlove","newpatrick","superegg","linefx",
+        "face","organicwaste","medical","matryoshka","teddi","jaws","polar","main",
+        "quackers","superkao","plasticwaste","gamer","tropical","seals","rabb",
+        "kavocado","care","haunt","miedo","scaryxmas","darkfriday","trader","knack",
+        "natal","magnus","subzero","acid","different","forever","bd","statusfx",
+        "chicky","lovespring","jellybean","worms","flipban","bantimes","claude",
+        "circlefx","graffiti","viki","whitelist","fright","gstyle","christmastide",
+        "newyearfx","freeze","showlove","superfx","springsmile","loveearth",
+        "superbunny","smokefx","littlebunny","superbf","blackmon","extralove",
+        "superzoo","women","earthhour","666","lights","superfarm","springeaster",
+        "supergirl","pstyle","cathats","mood","moyai","krobo","autumnmood",
+        "hallowneon","ghosty","patches","chilly","pawns","snowball","gkturkey",
+        "snowies","furball","cheers","nyfun","silo","android","sadie","tony",
+        "creamy","superhistory","starfx","likes","flor","maus","yellow","frosch",
+        "iconcolor","cogu","axo","starry","squid","puff","magik","anna","candybear",
+        "susto","fur","handy","anigirl","cerf","elfo","flipflop","selflove",
+        "cstyle","beaver","tele","lapin","queenb","emma","rider","cupcat","pawnhue",
+        "horrorgal","morgana","lems","kwinter","kide","ratmas","xaf","kitsune",
+        "vaf","lovebeat","pengfun","patday","stella","leafy",
+        "everypower","allpowers","ranklock2","pcplus2","gkturkey2"
+    ];
+
+    loadPowerSuggestions();
+
+    const searchInput      = document.getElementById('searchInput');
+    const autocompleteList = document.getElementById('autocompleteList');
+
+    function _triggerAutocomplete(val) {
+        if (!val) { autocompleteList.style.display = 'none'; return; }
+        if (searchInput.value.trim().toLowerCase() !== val) return;
+
+        autocompleteList.innerHTML = '';
+
+        if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        const startsWith = allPowersList.filter(e => e.name.startsWith(val));
+        const contains   = allPowersList.filter(e => !e.name.startsWith(val) && e.name.includes(val));
+        const filtered   = [...startsWith, ...contains].slice(0, 10);
+
+        if (filtered.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        autocompleteList.style.display = 'block';
+        filtered.forEach(entry => {
+            const { name, isCollection } = entry;
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+
+            const imgWrap = document.createElement('div');
+            imgWrap.style.cssText = 'width:28px;height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;position:relative;';
+
+            const img = document.createElement('img');
+            img.className = 'autocomplete-img';
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s';
+            img.style.visibility = 'hidden';
+
+            const spin = document.createElement('div');
+            spin.style.cssText = 'position:absolute;width:12px;height:12px;border:2px solid #cbd5e1;border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;';
+            imgWrap.appendChild(spin);
+            imgWrap.appendChild(img);
+
+            const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_40`;
+            LOAD_QUEUE.push({
+                img,
+                url: imgUrl,
+                onLoad: () => {
+                    spin.remove();
+                    img.style.opacity = '1';
+                    img.style.visibility = 'visible';
+                },
+                onFail: () => {
+                    spin.remove();
+                    img.src = 'https://i.imgur.com/Un8kz4J.png';
+                    img.style.opacity = '1';
+                    img.style.visibility = 'visible';
+                }
+            });
+            processQueue();
+
+            const matchIdx = name.indexOf(val);
+            let formattedName = name;
+            if (matchIdx !== -1) {
+                const before = name.substring(0, matchIdx);
+                const match  = name.substring(matchIdx, matchIdx + val.length);
+                const after  = name.substring(matchIdx + val.length);
+                formattedName = `${before}<span style="font-weight:800;color:var(--primary);">${match}</span>${after}`;
+            }
+            const textSpan = document.createElement('span');
+            textSpan.innerHTML = formattedName;
+
+            div.appendChild(imgWrap);
+            div.appendChild(textSpan);
+            if (isCollection) {
+                const badge = document.createElement('span');
+                badge.className = 'autocomplete-badge-col';
+                badge.setAttribute('data-i18n', 'colBadge');
+                badge.textContent = t('colBadge');
+                div.appendChild(badge);
+            }
+
+            div.addEventListener('click', function () {
+                searchInput.value = name;
+                autocompleteList.style.display = 'none';
+                fetchPowerData(name);
+            });
+            autocompleteList.appendChild(div);
+        });
+    }
+
+    searchInput.addEventListener('input', function () {
+        _triggerAutocomplete(this.value.trim().toLowerCase());
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target !== searchInput) {
+            autocompleteList.style.display = 'none';
+        }
+    });
+
+    // ============================================================
+    //  BÚSQUEDA DE POWERS
+    // ============================================================
     function sanitizePowerName(name) {
         if (!/^[a-z0-9_-]+$/i.test(name)) throw new Error("Nombre de poder inválido.");
         return encodeURIComponent(name.toLowerCase());
@@ -755,7 +1116,6 @@
     const getBadge = (val, style = 'info') =>
         `badge ${val === 'N/A' ? 'badge-neutral' : `badge-${style}`}`;
 
-    // ── CHANGE 5: createImageCard passes smallPawn flag to forceLoadImage ──
     function createImageCard(nombre, imgUrl, codigoText, container, smallPawn = false) {
         const group = document.createElement('div');
         group.className = 'code-group';
@@ -770,9 +1130,7 @@
         img.className = 'sprite-image';
         img.loading = "eager";
         img.decoding = "sync";
-        if (smallPawn) {
-            img.classList.add("pawn-natural");
-        }
+        if (smallPawn) img.classList.add("pawn-natural");
         spriteContainer.appendChild(img);
 
         forceLoadImage(img, imgUrl, smallPawn);
@@ -785,7 +1143,7 @@
 
         const btnCopy = document.createElement('button');
         btnCopy.className = 'btn-action';
-        btnCopy.textContent = 'Copiar';
+        btnCopy.textContent = t('copy');
 
         btnCopy.onclick = () => {
             try {
@@ -795,16 +1153,15 @@
                 tempInput.select();
                 document.execCommand("copy");
                 document.body.removeChild(tempInput);
-
-                btnCopy.textContent = '¡Copiado!';
+                btnCopy.textContent = t('copied');
                 btnCopy.style.backgroundColor = 'var(--success)';
                 btnCopy.style.color = 'white';
             } catch {
-                btnCopy.textContent = 'Error';
+                btnCopy.textContent = t('error');
                 btnCopy.style.color = 'var(--danger-text)';
             }
             setTimeout(() => {
-                btnCopy.textContent = 'Copiar';
+                btnCopy.textContent = t('copy');
                 btnCopy.style.backgroundColor = '';
                 btnCopy.style.color = 'var(--primary)';
             }, 1500);
@@ -832,7 +1189,9 @@
         loader.style.display = 'block';
         content.style.display = 'none';
         errorState.style.display = 'none';
-        
+        errorMessage.removeAttribute('data-i18n-error');
+        errorMessage.removeAttribute('data-i18n-param');
+
         document.getElementById('parentCollectionPawnsCard').style.display = 'none';
         document.getElementById('parentCollectionPawnsCard').dataset.loaded = '';
 
@@ -866,9 +1225,15 @@
                 if (acesRes.ok) {
                     const acesData = await acesRes.json();
                     if (acesData.code === 200) { data = acesData; isAce = true; }
-                    else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado.`);
+                    else if (!await tryPowerSearch()) {
+                        const err = new Error(t('errorNotFound'));
+                        err.i18nKey = 'errorNotFound';
+                        throw err;
+                    }
                 } else if (!await tryPowerSearch()) {
-                    throw new Error(`HTTP ${powerRes.status}: No se pudo obtener el poder.`);
+                    const err = new Error(t('errorNotFound'));
+                    err.i18nKey = 'errorNotFound';
+                    throw err;
                 }
             } else {
                 data = await powerRes.json();
@@ -877,11 +1242,25 @@
                     if (acesRes2.ok) {
                         const acesData2 = await acesRes2.json();
                         if (acesData2.code === 200) { data = acesData2; isAce = true; }
-                        else if (!await tryPowerSearch()) throw new Error(`Poder no encontrado o API falló.`);
+                        else if (!await tryPowerSearch()) {
+                            const err = new Error(t('errorApiFailed').replace('{code}', data.code));
+                            err.i18nKey = 'errorApiFailed';
+                            err.i18nParam = data.code;
+                            throw err;
+                        }
                     } else if (!await tryPowerSearch()) {
-                        throw new Error(`Error ${data.code}: Poder no encontrado o API falló.`);
+                        const err = new Error(t('errorApiFailed').replace('{code}', data.code));
+                        err.i18nKey = 'errorApiFailed';
+                        err.i18nParam = data.code;
+                        throw err;
                     }
                 }
+            }
+
+            if (data && (data.data || data.power)) {
+                const foundName = (data.data && data.data.Name) || (data.power && data.power.name) || rawName;
+                _addEntry(foundName);
+                allPowersList.sort((a, b) => a.name.localeCompare(b.name));
             }
 
             if (isPowerSearch) {
@@ -980,10 +1359,17 @@
             };
 
             await renderDashboard(powerData);
+            
+            // Forzar actualización de idioma en elementos renderizados
+            updateLanguageUI();
 
         } catch (error) {
             loader.style.display = 'none';
             errorMessage.textContent = error.message;
+            if (error.i18nKey) {
+                errorMessage.setAttribute('data-i18n-error', error.i18nKey);
+                if (error.i18nParam) errorMessage.setAttribute('data-i18n-param', error.i18nParam);
+            }
             errorState.style.display = 'block';
         }
     }
@@ -1031,7 +1417,7 @@
             colName.style.cssText = 'font-size:12px;font-weight:700;color:#854d0e;margin-top:4px;text-transform:capitalize;';
             const colWrap = document.createElement('div');
             colWrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:transform 0.2s,opacity 0.2s;';
-            colWrap.title = 'Ver peones de ' + item.ParentCollection.name;
+            colWrap.title = t('viewPawnsOf') + ' ' + item.ParentCollection.name;
             colWrap.addEventListener('mouseenter', () => { colWrap.style.transform = 'scale(1.1)'; colWrap.style.opacity = '0.85'; });
             colWrap.addEventListener('mouseleave', () => { colWrap.style.transform = ''; colWrap.style.opacity = ''; });
             colWrap.appendChild(colImg);
@@ -1054,7 +1440,7 @@
         tImg.loading = "eager";
         tImg.decoding = "sync";
         tImg.style.cursor = 'pointer';
-        tImg.title = `Ver ${item.name} en la wiki de xat`;
+        tImg.title = t('viewOnWiki').replace('{p}', item.name);
         tImg.addEventListener('click', () => window.open(`https://wiki.xat.com/${encodeURIComponent(item.name)}`, '_blank'));
         tImg.addEventListener('error', function onErr() {
             const fallbackUrl = `https://gs.xat.com/a_(${encodeURIComponent(primerSmiley || item.name)})_40`;
@@ -1094,7 +1480,6 @@
         if (item.IsPowerSearch && item.name.toLowerCase() === 'everypower') {
             coloringCard.style.display = 'block';
             EVERYPOWER_COLORING.forEach((pawn) => {
-                // ── CHANGE 6: Everypower coloring uses _80 for consistent size ──
                 const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_80`;
                 createImageCard(pawn.name, imgUrl, pawn.hat, coloringGrid, true);
             });
@@ -1114,7 +1499,7 @@
             );
             pawnsCard.style.display = 'block';
             if (filteredPawns.length === 0) {
-                pawnsGrid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">No active pawns</p>';
+                pawnsGrid.innerHTML = `<p data-i18n="noActivePawns" style="color:var(--text-muted);width:100%;text-align:center;">${t('noActivePawns')}</p>`;
             } else {
                 filteredPawns.forEach((pawn) => {
                     const imgUrl = `https://gs.xat.com/a_(${encodeURIComponent(pawn.name)})_40`;
@@ -1205,7 +1590,7 @@
         }
 
         grid.innerHTML = '';
-        title.textContent = 'Peones de ' + colName.charAt(0).toUpperCase() + colName.slice(1);
+        title.textContent = t('pawnsOf') + ' ' + colName.charAt(0).toUpperCase() + colName.slice(1);
         loader.style.display = 'inline';
         card.style.display = 'block';
         card.dataset.loaded = '';
@@ -1221,7 +1606,7 @@
                 ? data.power.pawns : [];
 
             if (pawns.length === 0) {
-                grid.innerHTML = '<p style="color:var(--text-muted);width:100%;text-align:center;">Sin peones disponibles</p>';
+                grid.innerHTML = `<p data-i18n="noPawnsAvail" style="color:var(--text-muted);width:100%;text-align:center;">${t('noPawnsAvail')}</p>`;
             } else {
                 pawns.forEach((pawnName) => {
                     const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(p1${encodeURIComponent(pawnName)})_40`;
@@ -1229,12 +1614,19 @@
                 });
             }
             card.dataset.loaded = colName;
+            
+            // Forzar actualización de idioma en los nuevos peones de colección si es necesario
+            updateLanguageUI();
         } catch {
             loader.style.display = 'none';
-            grid.innerHTML = '<p style="color:var(--danger-text);width:100%;text-align:center;">Error al cargar los peones.</p>';
+            grid.innerHTML = `<p data-i18n="errorLoadingPawns" style="color:var(--danger-text);width:100%;text-align:center;">${t('errorLoadingPawns')}</p>`;
+            updateLanguageUI();
         }
     }
 
+    // ============================================================
+    //  EVENTOS DE UI
+    // ============================================================
     document.getElementById('searchForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const powerInput = document.getElementById('searchInput').value.trim();
@@ -1248,241 +1640,9 @@
         }
     });
 
-    let allPowersList = [];
-    const _seen = new Set();
-
-    function _addEntry(name, isCollection = false) {
-        if (typeof name !== 'string') return;
-        const clean = name.trim().toLowerCase();
-        if (!/^[a-z0-9_-]{2,25}$/.test(clean)) return;
-        if (_seen.has(clean)) {
-            if (isCollection) {
-                const ex = allPowersList.find(e => e.name === clean);
-                if (ex) ex.isCollection = true;
-            }
-            return;
-        }
-        _seen.add(clean);
-        allPowersList.push({ name: clean, isCollection });
-    }
-
-    const KNOWN_POWERS = [
-        "topman","subhide","mod8","zoom","nofollow","invert","mirror","noaudies",
-        "reghide","nopc","tempmod","hat","red","green","blue","light","heart",
-        "shuffle","animate","square","nameglow","cycle","hexagon","clear","boot",
-        "octogram","show","superkick","invisible","pink","guestself","sinbin",
-        "diamond","purple","ttth","hands","hairm","hairf","fade","gag","costumes",
-        "six","dood","angel","mute","radio","fruit","sport","num",
-        "hush","halloween","anime","status","thanksgiving","snowy","christmas",
-        "count","stick","dx","tempmem","valentine","blueman","party","irish",
-        "flashrank","easter","nopm","banish","circus","gkaoani","military","gline",
-        "bump","gkaliens","scifi","supporter","tempown","gcontrol","tickle","sea",
-        "silly","blastpro","flag","blastban","independence","blastde","summer",
-        "bad","rapid","horror","mint","blastkick","winter","adventure","feast",
-        "single","link",
-        "shocker","fairy","namecolor","gkbear","angry","gscol","ugly","love",
-        "barge","gkkitty","fantasy","announce","hero","rankpool","spin","animal",
-        "music","gkpanda","unwell","events","zap","sins","outfit","wildwest",
-        "work","banpool","beach","candy","gback","zodiac","flower","space",
-        "snakeban","stoneage","spaceban","dance","nerd","kpeng","matchban",
-        "school","silentm","punch","away","peace","kchick","carve","spooky",
-        "kdog","bot","manga","mazeban","gold","snowman","reindeer","santa",
-        "sparta","dunce","newyear","can",
-        "codeban","magicfx","spy","kduck","heartfx","carnival","topspin","movie",
-        "monster","kat","typing","ksheep","pulsefx","blobby","reverse","fuzzy",
-        "spiralfx","nursing","gsound","kbee","vortexfx","jail","zip","drip",
-        "moustache","whirlfx","doodlerace","olympic","aliens","matchrace",
-        "burningheart","snakerace","kpig","poker","pony","clockfx","drop",
-        "spacewar","speech","quest","glitterfx","quest2","lang","claus","treefx",
-        "vampyre","xavi","kmouse","eighties","foe","zombie","makeup","kheart",
-        "kmonkey","nuclear","stylist","vote","spring","eggs","hands2","hearts",
-        "kfox","kcow","sketch","led","seaside","hair2f","statusglow","super",
-        "wedding","cactus","switch","fourth","cuboid","phasefx","romance",
-        "marriage","sticky","kickall","darts","weather","kangel","kdemon",
-        "autumn","eggy","redirect","ani1","scary","halloween2","piracy","froggy",
-        "blackfriday","winterland","noel","toys","badge","celebrate","hogmanay",
-        "farm","divorce","arachnid","sweetheart","cupcake","ladybug","random",
-        "luck","tongues","springflix","snail","eventstats","easteregg",
-        "butterflies","springy","naughtystep","coffee","hamster","dreams",
-        "gamefx","worldcup","rocks","yellowcard","ballfx","winner","cutie",
-        "summerflix","statuscolor","coolz","magic","blubunni","instruments",
-        "pcback","bird","chocolate","kmoon","ksun","jump","trickortreat","creepy",
-        "manage","blueoni","icebucket","gamefx2","reveal","holidays","lunar",
-        "backup","size","egyptian","retro","jewelry","offset","amore","valfx",
-        "oids","birthday","supercycle","tv","clouds","beastie","easterlove",
-        "mobilebeta","eco","floral","shinobi","aliblue","gothic","redcard","pets",
-        "ceebear","aquatic","nick","shells","microbe","balloonfx","poke","me",
-        "transport","planets","lions","big","precious","glob","kandle","roosters",
-        "ranklock","kstar","allhallows","witch","tigers","beautifly","choirhug",
-        "sleighhug","ornaments","fireworkshug","masks","electricity","ricebowl",
-        "paints","lovemix","lovehug","mining","caterpillar","namegrad","patrick",
-        "ebunny","easterland","fools","songkran","onion","mom","koala","namewave",
-        "chores","animegirl","diva","tooth","worm","nameflag","aprincess",
-        "summerhug","kwolf","comics","popcorns","elephant","ten","spacejinx",
-        "meow","classic","boo","fall","graveyard","funfair","cadet","christmix",
-        "tropicalxmas","gobble","sparklefx","fireworksfx","battle","kaoears",
-        "x2d","mountain","lovemix2","lovefx","lovetest","kgiraffe","mousie","ruby",
-        "wish","spacefx","toad","foolsday","anichick","ribunny","kawaii","hedgehog",
-        "earth","eggie","rapidreason","neon","drawn","fishbowl","splashfx",
-        "ghostmon","broadcaster","minimon","fiesta","kloud","sline","cuticorn",
-        "nightmare","silentban","travel","puppy","firefx","flgpwn","owlie","octo",
-        "mark","skull","halloscroll","plants","yoga","fitness","pcbr","xmasscroll",
-        "kxmas","xmasfactory","flaghug","sqanimal","superblastban","superblastkick",
-        "dragons","samba","heartbreak","nuts","illusionfx","accessory","cups",
-        "patrickfx","rankscroll","hippos","bestfriend","kitcup","seasons","birdie",
-        "botstat","guineapig","baghead","hats","superanime","koffee","pizzas",
-        "portalfx","esmile","glitch","raccoons","supersummer","pcplus","silentg",
-        "glasses","muertos","superhalloween","kcar","piggy","appbot","swordfx",
-        "wigs","snowflake","superxmas","kactus","superboy","khair","marshie",
-        "valentinefx","superheart","trains","morph","fashion","skunk","meerkat",
-        "time","mime","superhobby","kbacks","easterfx","category","tshirt","fido",
-        "balloony","swimming","ahair","baby","nat","heat","creature","max",
-        "acting","couple","dinosaur","umbrella","mythy","hairb","workout","nin",
-        "fear","spookies","superscary","woodland","energyfx","kris","king",
-        "blacksale","neva","supersanta","revel","xmastime","puzzle","scamp",
-        "luvcat","ali","lovepotion","superlove","newpatrick","superegg","linefx",
-        "face","organicwaste","medical","matryoshka","teddi","jaws","polar","main",
-        "quackers","superkao","plasticwaste","gamer","tropical","seals","rabb",
-        "kavocado","care","haunt","miedo","scaryxmas","darkfriday","trader","knack",
-        "natal","magnus","subzero","acid","different","forever","bd","statusfx",
-        "chicky","lovespring","jellybean","worms","flipban","bantimes","claude",
-        "circlefx","graffiti","viki","whitelist","fright","gstyle","christmastide",
-        "newyearfx","freeze","showlove","superfx","springsmile","loveearth",
-        "superbunny","smokefx","littlebunny","superbf","blackmon","extralove",
-        "superzoo","women","earthhour","666","lights","superfarm","springeaster",
-        "supergirl","pstyle","cathats","mood","moyai","krobo","autumnmood",
-        "hallowneon","ghosty","patches","chilly","pawns","snowball","gkturkey",
-        "snowies","furball","cheers","nyfun","silo","android","sadie","tony",
-        "creamy","superhistory","starfx","likes","flor","maus","yellow","frosch",
-        "iconcolor","cogu","axo","starry","squid","puff","magik","anna","candybear",
-        "susto","fur","handy","anigirl","cerf","elfo","flipflop","selflove",
-        "cstyle","beaver","tele","lapin","queenb","emma","rider","cupcat","pawnhue",
-        "horrorgal","morgana","lems","kwinter","kide","ratmas","xaf","kitsune",
-        "vaf","lovebeat","pengfun","patday","stella","leafy",
-        "everypower","allpowers","ranklock2","pcplus2","gkturkey2"
-    ];
-
-    async function _fetchSafe(url) {
-        try {
-            const res = await fetch(url);
-            if (!res.ok) return null;
-            return await res.json();
-        } catch(e) { return null; }
-    }
-
-    async function loadPowerSuggestions() {
-        const colData = await _fetchSafe('https://api.xatblog.net/collectionlist');
-        if (colData && colData.code === 200 && Array.isArray(colData.powers)) {
-            colData.powers.forEach(c => { const n = c.name || c.Name; if (n) _addEntry(n, true); });
-        }
-
-        KNOWN_POWERS.forEach(n => _addEntry(n, false));
-
-        allPowersList.sort((a, b) => a.name.localeCompare(b.name));
-
-        const liveVal = document.getElementById('searchInput')?.value?.trim().toLowerCase();
-        if (liveVal) _triggerAutocomplete(liveVal);
-    }
-
-    loadPowerSuggestions();
-
-    const searchInput      = document.getElementById('searchInput');
-    const autocompleteList = document.getElementById('autocompleteList');
-
-    function _triggerAutocomplete(val) {
-        if (!val) { autocompleteList.style.display = 'none'; return; }
-        if (searchInput.value.trim().toLowerCase() !== val) return;
-
-        autocompleteList.innerHTML = '';
-
-        if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
-
-        const startsWith = allPowersList.filter(e => e.name.startsWith(val));
-        const contains   = allPowersList.filter(e => !e.name.startsWith(val) && e.name.includes(val));
-        const filtered   = [...startsWith, ...contains].slice(0, 10);
-
-        if (filtered.length === 0) { autocompleteList.style.display = 'none'; return; }
-
-        autocompleteList.style.display = 'block';
-        filtered.forEach(entry => {
-            const { name, isCollection } = entry;
-            const div     = document.createElement('div');
-            div.className = 'autocomplete-item';
-
-            const imgWrap = document.createElement('div');
-            imgWrap.style.cssText = 'width:28px;height:28px;min-width:28px;display:flex;align-items:center;justify-content:center;position:relative;';
-
-            const img = document.createElement('img');
-            img.className = 'autocomplete-img';
-            img.style.opacity = '0';
-            img.style.transition = 'opacity 0.2s';
-            img.style.visibility = 'hidden';
-
-            const spin = document.createElement('div');
-            spin.style.cssText = 'position:absolute;width:12px;height:12px;border:2px solid #cbd5e1;border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;';
-            imgWrap.appendChild(spin);
-            imgWrap.appendChild(img);
-
-            const imgUrl = `https://s0.xat.com/web_gear/chat/GetStrip8.php?c=a_(${encodeURIComponent(name)})_40`;
-            LOAD_QUEUE.push({
-                img,
-                url: imgUrl,
-                onLoad: () => {
-                    spin.remove();
-                    img.style.opacity  = '1';
-                    img.style.visibility = 'visible';
-                },
-                onFail: () => {
-                    spin.remove();
-                    img.src = 'https://i.imgur.com/Un8kz4J.png';
-                    img.style.opacity  = '1';
-                    img.style.visibility = 'visible';
-                }
-            });
-            processQueue();
-
-            const matchIdx = name.indexOf(val);
-            let formattedName = name;
-            if (matchIdx !== -1) {
-                const before = name.substring(0, matchIdx);
-                const match  = name.substring(matchIdx, matchIdx + val.length);
-                const after  = name.substring(matchIdx + val.length);
-                formattedName = `${before}<span style="font-weight:800;color:var(--primary);">${match}</span>${after}`;
-            }
-            const textSpan = document.createElement('span');
-            textSpan.innerHTML = formattedName;
-
-            div.appendChild(imgWrap);
-            div.appendChild(textSpan);
-            if (isCollection) {
-                const badge = document.createElement('span');
-                badge.className = 'autocomplete-badge-col';
-                badge.textContent = 'Colección';
-                div.appendChild(badge);
-            }
-
-            div.addEventListener('click', function () {
-                searchInput.value = name;
-                autocompleteList.style.display = 'none';
-                fetchPowerData(name);
-            });
-            autocompleteList.appendChild(div);
-        });
-    }
-
-    searchInput.addEventListener('input', function () {
-        _triggerAutocomplete(this.value.trim().toLowerCase());
-    });
-
-    document.addEventListener('click', function (e) {
-        if (e.target !== searchInput) {
-            autocompleteList.style.display = 'none';
-        }
-    });
-
     const themeBtn = document.getElementById('themeBtn');
     const currentTheme = localStorage.getItem('theme') || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-    
+
     if (currentTheme === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
         themeBtn.textContent = '☀️';
@@ -1551,6 +1711,9 @@
         });
     });
 
+    // ============================================================
+    //  SMILES GRATUITAS
+    // ============================================================
     const FREE_SMILES = [
         "3d","3tomoe","6","8ball","a","a1","aghast","agitated","airplane","alien",
         "amy","annoyed","ao","applause","arbiter","argue","ashamed","astonished","b","babythrow",
@@ -1633,7 +1796,7 @@
 
                     const btnCopy = document.createElement('button');
                     btnCopy.className = 'btn-action';
-                    btnCopy.textContent = 'Copiar';
+                    btnCopy.textContent = t('copy');
                     btnCopy.onclick = () => {
                         try {
                             const tmp = document.createElement('input');
@@ -1642,15 +1805,15 @@
                             tmp.select();
                             document.execCommand('copy');
                             document.body.removeChild(tmp);
-                            btnCopy.textContent = '¡Copiado!';
+                            btnCopy.textContent = t('copied');
                             btnCopy.style.backgroundColor = 'var(--success)';
                             btnCopy.style.color = 'white';
                         } catch {
-                            btnCopy.textContent = 'Error';
+                            btnCopy.textContent = t('error');
                             btnCopy.style.color = 'var(--danger-text)';
                         }
                         setTimeout(() => {
-                            btnCopy.textContent = 'Copiar';
+                            btnCopy.textContent = t('copy');
                             btnCopy.style.backgroundColor = '';
                             btnCopy.style.color = 'var(--primary)';
                         }, 1500);
@@ -1661,9 +1824,21 @@
                     group.appendChild(btnCopy);
                     grid.appendChild(group);
 
+                    // REGLA ESTRICTA DE CARGA 80 -> 40
                     LOAD_QUEUE.push({
                         img,
-                        url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`
+                        url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`,
+                        noAutoFallback: true, // Esto desactiva el fallback genérico de la app
+                        onFail: () => {
+                            // Si _80 falla, pedimos directamente _40 y no volvemos a intentar nada más
+                            LOAD_QUEUE.push({
+                                img,
+                                url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_40`,
+                                noAutoFallback: true,
+                                onFail: () => { img.style.display = 'none'; }
+                            });
+                            processQueue();
+                        }
                     });
                     processQueue();
                 });
@@ -1673,6 +1848,9 @@
     }
 
     document.getElementById('freeSmileBtn').addEventListener('click', toggleFreeSmiles);
+
+    // Inicializar Idioma al cargar la página
+    updateLanguageUI();
 
 </script>
 </body>
