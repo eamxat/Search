@@ -232,6 +232,8 @@
 
         .table-responsive { overflow-x: auto; }
 
+        .swipe-indicator { display: none; } /* Oculto por defecto en PC */
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -418,6 +420,22 @@
             .card { padding: 16px 12px; border-radius: 12px; }
             .card-title { font-size: 1.05rem; }
             .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+            /* Mostramos el indicador solo en pantallas móviles (Android/iOS) con una suave animación */
+            .swipe-indicator { 
+                display: block; 
+                font-size: 11px; 
+                font-weight: 800; 
+                color: var(--primary); 
+                text-transform: uppercase; 
+                letter-spacing: 0.05em; 
+                animation: swipePulse 2s infinite; 
+            }
+            @keyframes swipePulse { 
+                0%, 100% { opacity: 0.5; transform: translateX(0); } 
+                50% { opacity: 1; transform: translateX(5px); } 
+            }
+
             table { font-size: 13px; }
             th, td { padding: 10px 8px; }
 
@@ -500,8 +518,9 @@
     <div id="dashboardContent">
 
         <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
                 <h2 class="card-title" data-i18n="powerInfo">Información sobre el power</h2>
+                <div class="swipe-indicator" data-i18n="swipeHint">👉 DESLIZAR</div>
             </div>
             <div class="table-responsive">
                 <table>
@@ -633,7 +652,7 @@
             noPawnsAvail: "Sin peones disponibles", viewPawnsOf: "Ver peones de", viewOnWiki: "Ver {p} en la wiki de xat",
             pawnsOf: "Peones de", errorLoadingPawns: "Error al cargar los peones.", thColBadge: "Colección",
             errorNotFound: "Poder no encontrado.", errorApiFailed: "Error {code}: Poder no encontrado o API falló.",
-            colBadge: "Colección"
+            colBadge: "Colección", swipeHint: "👉 DESLIZAR"
         },
         en: {
             searchPlaceholder: "e.g.", searchBtn: "SEARCH", reloadTitle: "Reload images", themeTitle: "Toggle dark mode",
@@ -649,7 +668,7 @@
             noPawnsAvail: "No pawns available", viewPawnsOf: "View pawns of", viewOnWiki: "View {p} on xat wiki",
             pawnsOf: "Pawns of", errorLoadingPawns: "Error loading pawns.", thColBadge: "Collection",
             errorNotFound: "Power not found.", errorApiFailed: "Error {code}: Power not found or API failed.",
-            colBadge: "Collection"
+            colBadge: "Collection", swipeHint: "👉 SWIPE"
         }
     };
 
@@ -819,21 +838,22 @@
     let allPowersList = [];
     const _seenNames  = new Set();
 
-    function _addEntry(name, isCollection = false) {
+    // Ahora guardamos explícitamente el 'type' para poder filtrar la basura
+    function _addEntry(name, type = 'power') {
         if (typeof name !== 'string') return;
         const clean = name.trim().toLowerCase();
-        // Evitamos añadir textos aleatorios (forzamos que parezca un nombre de power válido)
+        
         if (!/^[a-z0-9_-]{2,40}$/i.test(clean) || !/[a-z]/i.test(clean)) return;
         
         if (_seenNames.has(clean)) {
-            if (isCollection) {
+            if (type === 'supercollection' || type === 'collection') {
                 const ex = allPowersList.find(e => e.name === clean);
-                if (ex) ex.isCollection = true;
+                if (ex) ex.type = 'supercollection';
             }
             return;
         }
         _seenNames.add(clean);
-        allPowersList.push({ name: clean, isCollection });
+        allPowersList.push({ name: clean, type });
     }
 
     async function _fetchSafe(url) {
@@ -844,67 +864,70 @@
         } catch { return null; }
     }
 
-    // Función universal y 100% recursiva para atrapar CUALQUIER power de cualquier API
-    function _extractNamesRobustly(val) {
+    // Función universal robusta: NO permite que se agreguen peones o smiles al dataset global
+    function _extractNamesRobustly(val, defaultType = 'power') {
         if (!val) return;
         
-        // 1. Extraer si es string directo
-        if (typeof val === 'string') {
-            const clean = val.trim().toLowerCase();
-            if (/^[a-z0-9_-]{2,40}$/i.test(clean) && /[a-z]/i.test(clean)) {
-                _addEntry(clean);
-            }
-            return;
-        }
-        
-        // 2. Si es array, recorrer iterativamente
+        // Si el valor superior es un array (como en power/list), iteramos para sacar los powers
         if (Array.isArray(val)) {
-            val.forEach(_extractNamesRobustly);
+            val.forEach(v => {
+                if (typeof v === 'string') {
+                    const clean = v.trim().toLowerCase();
+                    if (/^[a-z0-9_-]{2,40}$/i.test(clean) && /[a-z]/i.test(clean)) {
+                        _addEntry(clean, defaultType);
+                    }
+                } else {
+                    _extractNamesRobustly(v, defaultType);
+                }
+            });
             return;
         }
         
-        // 3. Si es objeto, escaneo profundo
+        // Si es un objeto, extraemos propiedades de nombre y bloqueamos las ramas indeseadas
         if (typeof val === 'object') {
-            // Buscamos claves específicas donde usualmente se esconden los nombres
-            if (typeof val.name === 'string') _extractNamesRobustly(val.name);
-            if (typeof val.Name === 'string') _extractNamesRobustly(val.Name);
-            if (typeof val.power === 'string') _extractNamesRobustly(val.power);
+            let itemType = defaultType;
+            if (val.type && typeof val.type === 'string') itemType = val.type.toLowerCase();
+            else if (val.isCollection) itemType = 'supercollection';
+
+            if (typeof val.name === 'string') _addEntry(val.name, itemType);
+            if (typeof val.Name === 'string') _addEntry(val.Name, itemType);
+            if (typeof val.power === 'string') _addEntry(val.power, itemType);
             
-            // Recorremos absolutamente todos los sub-objetos buscando más datos
-            Object.values(val).forEach(v => {
+            // ❌ LISTA NEGRA: Cortamos recursividad en estas ramas para no extraer basura (peones, smiles, descripciones)
+            const blacklist = ['smilies', 'pawns', 'hats', 'stickers', 'required', 'description', 'status', 'storestatus', 'prices', 'activepawnslist', 'pspawns', 'stickerlist'];
+            
+            Object.entries(val).forEach(([k, v]) => {
+                if (blacklist.includes(k.toLowerCase())) return; 
+                
                 if (typeof v === 'object' && v !== null) {
-                    _extractNamesRobustly(v);
+                    _extractNamesRobustly(v, itemType);
                 }
             });
         }
     }
 
     async function loadPowerSuggestions() {
-        // Lanzamos las peticiones simultáneamente y unificamos en el array global
         const [latestData, collectionData, illuxatListData, xatblogListData] = await Promise.allSettled([
             _fetchSafe('https://illuxat.com/api/latestpower'),
             _fetchSafe('https://api.xatblog.net/collectionlist'),
             _fetchSafe('https://illuxat.com/api/power/list'),
-            _fetchSafe('https://api.xatblog.net/powersearch/a') // Fallback de apoyo
+            _fetchSafe('https://api.xatblog.net/powersearch/a')
         ]);
 
-        // FUENTE 1 y 3: Extracción recursiva profunda (Resuelve el problema de no ver el power hasta buscarlo)
-        if (latestData.status === 'fulfilled') _extractNamesRobustly(latestData.value);
-        if (illuxatListData.status === 'fulfilled') _extractNamesRobustly(illuxatListData.value);
+        if (latestData.status === 'fulfilled') _extractNamesRobustly(latestData.value, 'power');
+        if (illuxatListData.status === 'fulfilled') _extractNamesRobustly(illuxatListData.value, 'power');
 
-        // FUENTE 2: xatblog collectionlist
         const colVal = collectionData.status === 'fulfilled' ? collectionData.value : null;
         if (colVal && colVal.code === 200 && Array.isArray(colVal.powers)) {
             colVal.powers.forEach(c => {
                 const n = c.name || c.Name;
-                if (n) _addEntry(n, true);
+                if (n) _addEntry(n, 'supercollection');
             });
         }
 
-        KNOWN_POWERS_BASE.forEach(n => _addEntry(n, false));
+        KNOWN_POWERS_BASE.forEach(n => _addEntry(n, 'power'));
         allPowersList.sort((a, b) => a.name.localeCompare(b.name));
 
-        // Si el usuario estaba escribiendo mientras se cargaban los datos, lo actualizamos instantáneamente
         const liveVal = document.getElementById('searchInput')?.value?.trim().toLowerCase();
         if (liveVal) _triggerAutocomplete(liveVal);
     }
@@ -1018,15 +1041,22 @@
 
         if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
 
-        const startsWith = allPowersList.filter(e => e.name.startsWith(val));
-        const contains   = allPowersList.filter(e => !e.name.startsWith(val) && e.name.includes(val));
+        // ✅ REQUISITO ESTRICTO: Filtrar el dataset global antes del match de texto
+        // Solo se permiten elementos tipo 'power', 'supercollection' o 'collection'
+        const validTypes = ['power', 'supercollection', 'collection'];
+        const validDataset = allPowersList.filter(e => validTypes.includes(e.type));
+
+        if (validDataset.length === 0) { autocompleteList.style.display = 'none'; return; }
+
+        const startsWith = validDataset.filter(e => e.name.startsWith(val));
+        const contains   = validDataset.filter(e => !e.name.startsWith(val) && e.name.includes(val));
         const filtered   = [...startsWith, ...contains].slice(0, 10);
 
         if (filtered.length === 0) { autocompleteList.style.display = 'none'; return; }
 
         autocompleteList.style.display = 'block';
         filtered.forEach(entry => {
-            const { name, isCollection } = entry;
+            const { name, type } = entry;
             const div = document.createElement('div');
             div.className = 'autocomplete-item';
 
@@ -1075,7 +1105,8 @@
 
             div.appendChild(imgWrap);
             div.appendChild(textSpan);
-            if (isCollection) {
+            
+            if (type === 'supercollection' || type === 'collection') {
                 const badge = document.createElement('span');
                 badge.className = 'autocomplete-badge-col';
                 badge.setAttribute('data-i18n', 'colBadge');
@@ -1259,7 +1290,7 @@
 
             if (data && (data.data || data.power)) {
                 const foundName = (data.data && data.data.Name) || (data.power && data.power.name) || rawName;
-                _addEntry(foundName);
+                _addEntry(foundName, 'power');
                 allPowersList.sort((a, b) => a.name.localeCompare(b.name));
             }
 
@@ -1824,18 +1855,36 @@
                     group.appendChild(btnCopy);
                     grid.appendChild(group);
 
-                    // REGLA ESTRICTA DE CARGA 80 -> 40
+                    // REGLA ESTRICTA DE CARGA 80 -> 80* -> 40 -> 40*
                     LOAD_QUEUE.push({
                         img,
                         url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`,
-                        noAutoFallback: true, // Esto desactiva el fallback genérico de la app
+                        noAutoFallback: true, // Desactiva la recursividad global por defecto
                         onFail: () => {
-                            // Si _80 falla, pedimos directamente _40 y no volvemos a intentar nada más
+                            // Intento 2: _80 normal falla -> _80 con asterisco (*)
                             LOAD_QUEUE.push({
                                 img,
-                                url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_40`,
+                                url: `https://gs.xat.com/a_(${encodeURIComponent(name)}*)_80`,
                                 noAutoFallback: true,
-                                onFail: () => { img.style.display = 'none'; }
+                                onFail: () => {
+                                    // Intento 3: Ambos _80 fallan -> _40 normal
+                                    LOAD_QUEUE.push({
+                                        img,
+                                        url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_40`,
+                                        noAutoFallback: true,
+                                        onFail: () => { 
+                                            // Intento 4: _40 normal falla -> Último intento: _40 con asterisco (*)
+                                            LOAD_QUEUE.push({
+                                                img,
+                                                url: `https://gs.xat.com/a_(${encodeURIComponent(name)}*)_40`,
+                                                noAutoFallback: true,
+                                                onFail: () => { img.style.display = 'none'; } // Falla total, ocultamos elemento
+                                            });
+                                            processQueue();
+                                        }
+                                    });
+                                    processQueue();
+                                }
                             });
                             processQueue();
                         }
