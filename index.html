@@ -559,6 +559,13 @@
             <div id="stickersGrid" class="codes-grid"></div>
         </div>
 
+        <div class="card" id="framesCard" style="display:none;">
+            <div class="card-header">
+                <h2 class="card-title">Frames</h2>
+            </div>
+            <div id="framesGrid" class="codes-grid"></div>
+        </div>
+
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title" data-i18n="smilesCardTitle">Smiles del power</h2>
@@ -1501,6 +1508,88 @@
             });
         } else {
             coloringCard.style.display = 'none';
+        }
+
+        // ---- FRAMES (VAF / XAF) ----
+        // Función reutilizable: crea una card de frame con imagen directa y sin botón copiar
+        function createFrameCard(frame, container) {
+            const group = document.createElement('div');
+            group.className = 'code-group';
+
+            // Spinner + imagen
+            const spriteContainer = document.createElement('div');
+            spriteContainer.className = 'sprite-container';
+            spriteContainer.innerHTML = `<svg class="animate-spin" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="gray" stroke-width="2" fill="none"/></svg>`;
+
+            const img = document.createElement('img');
+            img.className = 'sprite-image';
+            img.loading = 'eager';
+            img.decoding = 'sync';
+            img.style.opacity = '0';
+            img.style.visibility = 'hidden';
+            // Bloquear arrastre de imagen
+            img.addEventListener('dragstart', e => e.preventDefault());
+            img.addEventListener('contextmenu', e => e.preventDefault());
+
+            const loader = new Image();
+            loader.onload = () => {
+                img.src = loader.src;
+                const spin = spriteContainer.querySelector('.animate-spin');
+                if (spin) spin.remove();
+                requestAnimationFrame(() => { img.style.opacity = '1'; img.style.visibility = 'visible'; });
+            };
+            loader.onerror = () => {
+                const spin = spriteContainer.querySelector('.animate-spin');
+                if (spin) spin.remove();
+                img.style.display = 'none';
+            };
+            loader.src = frame.url;
+            spriteContainer.appendChild(img);
+
+            // Input de código — protegido contra copia total
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'code-input';
+            input.value = frame.code;
+            input.readOnly = true;
+            // Bloqueo visual y funcional de selección/copia
+            input.style.cssText += ';user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;pointer-events:none;cursor:default;';
+            ['copy','cut','contextmenu','dragstart','selectstart'].forEach(ev =>
+                input.addEventListener(ev, e => e.preventDefault())
+            );
+
+            // NO se añade botón copiar — el espacio queda limpio sin gap vacío
+            group.appendChild(spriteContainer);
+            group.appendChild(input);
+            container.appendChild(group);
+        }
+
+        const POWER_FRAMES = {
+            vaf: [
+                { code: 'HeartAurea',  url: 'https://wiki.xat.com/w/images/thumb/7/71/Heartaurea.png/95px-Heartaurea.png'   },
+                { code: 'HeartBloom',  url: 'https://wiki.xat.com/w/images/thumb/3/3e/Heartbloom.png/97px-Heartbloom.png'   },
+                { code: 'HeartCloud',  url: 'https://wiki.xat.com/w/images/thumb/e/eb/Heartcloud.png/94px-Heartcloud.png'   },
+                { code: 'HeartGarden', url: 'https://wiki.xat.com/w/images/thumb/8/86/Heartgarden.png/99px-Heartgarden.png' },
+                { code: 'HeartLocked', url: 'https://wiki.xat.com/w/images/thumb/a/a3/Heartlocked.png/102px-Heartlocked.png'},
+                { code: 'HeartPunk',   url: 'https://wiki.xat.com/w/images/thumb/2/24/Heartpunk.png/102px-Heartpunk.png'    },
+                { code: 'HeartThorns', url: 'https://wiki.xat.com/w/images/thumb/e/e4/Heartthorns.png/102px-Heartthorns.png'},
+            ],
+            xaf: [
+                { code: 'Christmas', url: 'https://wiki.xat.com/w/images/thumb/f/f6/Christmasframe.png/96px-Christmasframe.png' },
+                { code: 'Frost',     url: 'https://wiki.xat.com/w/images/thumb/f/fb/Frostframe.png/97px-Frostframe.png'         },
+            ],
+        };
+
+        const framesCard = document.getElementById("framesCard");
+        const framesGrid = document.getElementById("framesGrid");
+        framesGrid.innerHTML = '';
+        const powerKey = item.name.toLowerCase();
+        const frameList = POWER_FRAMES[powerKey];
+        if (frameList) {
+            framesCard.style.display = 'block';
+            frameList.forEach(frame => createFrameCard(frame, framesGrid));
+        } else {
+            framesCard.style.display = 'none';
         }
 
         const pawnsCard = document.getElementById("pawnsCard");
