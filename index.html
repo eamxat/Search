@@ -114,7 +114,6 @@
         .theme-btn { margin-left: 5px; }
         .refresh-btn:hover, .theme-btn:hover { opacity: 1; transform: scale(1.1); }
 
-        /* Botón de Idioma posicionado junto al Planeta */
         .lang-btn {
             background-color: var(--bg-card);
             border: 2px solid var(--border-color);
@@ -124,7 +123,7 @@
             border-radius: var(--radius-btn);
             cursor: pointer;
             padding: 0 12px;
-            height: 48px; /* Misma altura que el planeta */
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -232,7 +231,7 @@
 
         .table-responsive { overflow-x: auto; }
 
-        .swipe-indicator { display: none; } /* Oculto por defecto en PC */
+        .swipe-indicator { display: none; }
 
         table {
             width: 100%;
@@ -421,7 +420,6 @@
             .card-title { font-size: 1.05rem; }
             .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-            /* Mostramos el indicador solo en pantallas móviles (Android/iOS) con una suave animación */
             .swipe-indicator { 
                 display: block; 
                 font-size: 11px; 
@@ -466,10 +464,8 @@
 <div class="container">
 
     <form id="searchForm" class="search-container">
-        <!-- Botón de Traducción (Misma línea, a la izquierda del planeta) -->
         <button type="button" id="langBtn" class="lang-btn" data-i18n-title="langTitle" title="Cambiar idioma">EN</button>
         
-        <!-- Ícono del Planeta -->
         <img src="https://i.imgur.com/Un8kz4J.png" alt="Planeta" id="planetBtn" style="width:48px;height:48px;min-width:48px;min-height:48px;object-fit:contain;cursor:pointer;transition:transform 0.2s,opacity 0.2s;" title="Volver al inicio">
         
         <div class="search-input-wrapper">
@@ -677,7 +673,6 @@
     function t(key) { return i18n[currentLang][key] || key; }
 
     function updateLanguageUI() {
-        // Textos estáticos y con data-i18n dinámico post-render
         document.querySelectorAll('[data-i18n]').forEach(el => el.innerHTML = t(el.getAttribute('data-i18n')));
         document.querySelectorAll('[data-i18n-title]').forEach(el => el.title = t(el.getAttribute('data-i18n-title')));
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.placeholder = t(el.getAttribute('data-i18n-placeholder')));
@@ -685,18 +680,15 @@
         const langBtn = document.getElementById('langBtn');
         if(langBtn) langBtn.textContent = currentLang === 'es' ? 'EN' : 'ES';
 
-        // Actualización de botones copiadores
         const btnActions = document.querySelectorAll('.btn-action');
         btnActions.forEach(btn => { if(btn.textContent === i18n[currentLang==='es'?'en':'es'].copy) btn.textContent = t('copy'); });
         
-        // Título de la tarjeta dinámica
         const card = document.getElementById('parentCollectionPawnsCard');
         if (card && card.style.display !== 'none' && card.dataset.loaded) {
             const l = card.dataset.loaded;
             document.getElementById('parentCollectionPawnsTitle').textContent = t('pawnsOf') + ' ' + l.charAt(0).toUpperCase() + l.slice(1);
         }
         
-        // Tooltips dinámicos post-fetch
         const currentPowerName = document.getElementById('cell-name')?.textContent;
         if (currentPowerName) {
             const mainImg = document.querySelector('#mainImageContainer img');
@@ -709,7 +701,6 @@
             if(colName) cellCollectionWrap.title = t('viewPawnsOf') + ' ' + colName;
         }
 
-        // Manejo de errores dinámicos
         const errorMsgEl = document.getElementById('errorMessage');
         if (errorMsgEl && errorMsgEl.hasAttribute('data-i18n-error')) {
             const key = errorMsgEl.getAttribute('data-i18n-error');
@@ -740,7 +731,6 @@
         const job = LOAD_QUEUE.shift();
         activeLoads++;
         
-        // noAutoFallback desactiva el fallback genérico y permite el estricto
         const { img, url, onLoad, onFail, smallPawn, noAutoFallback } = job;
         img.style.opacity = "0";
         img.style.visibility = "hidden";
@@ -755,14 +745,12 @@
         };
 
         const fallback = () => {
-            // Regla estricta para smiles gratuitas: Solo intenta la orden directa. Si falla, corta el flujo.
             if (noAutoFallback) {
                 if (onFail) onFail(); else img.style.display = "none";
                 done();
                 return;
             }
 
-            // Fallbacks normales de la app
             if (url.includes('GetStrip8') && url.includes('p1')) {
                 const match = url.match(/p1(.+?)%29/i) || url.match(/p1(.+?)\)/i);
                 if (match) {
@@ -838,12 +826,15 @@
     let allPowersList = [];
     const _seenNames  = new Set();
 
-    // Ahora guardamos explícitamente el 'type' para poder filtrar la basura
     function _addEntry(name, type = 'power') {
         if (typeof name !== 'string') return;
         const clean = name.trim().toLowerCase();
         
+        // Validación de formato básico
         if (!/^[a-z0-9_-]{2,40}$/i.test(clean) || !/[a-z]/i.test(clean)) return;
+
+        // ✅ FIX: Rechazar explícitamente peones — su patrón universal en xat es iniciar con "p1"
+        if (/^p1/i.test(clean)) return;
         
         if (_seenNames.has(clean)) {
             if (type === 'supercollection' || type === 'collection') {
@@ -864,11 +855,9 @@
         } catch { return null; }
     }
 
-    // Función universal robusta: NO permite que se agreguen peones o smiles al dataset global
     function _extractNamesRobustly(val, defaultType = 'power') {
         if (!val) return;
         
-        // Si el valor superior es un array (como en power/list), iteramos para sacar los powers
         if (Array.isArray(val)) {
             val.forEach(v => {
                 if (typeof v === 'string') {
@@ -883,7 +872,6 @@
             return;
         }
         
-        // Si es un objeto, extraemos propiedades de nombre y bloqueamos las ramas indeseadas
         if (typeof val === 'object') {
             let itemType = defaultType;
             if (val.type && typeof val.type === 'string') itemType = val.type.toLowerCase();
@@ -893,7 +881,6 @@
             if (typeof val.Name === 'string') _addEntry(val.Name, itemType);
             if (typeof val.power === 'string') _addEntry(val.power, itemType);
             
-            // ❌ LISTA NEGRA: Cortamos recursividad en estas ramas para no extraer basura (peones, smiles, descripciones)
             const blacklist = ['smilies', 'pawns', 'hats', 'stickers', 'required', 'description', 'status', 'storestatus', 'prices', 'activepawnslist', 'pspawns', 'stickerlist'];
             
             Object.entries(val).forEach(([k, v]) => {
@@ -1041,10 +1028,9 @@
 
         if (allPowersList.length === 0) { autocompleteList.style.display = 'none'; return; }
 
-        // ✅ REQUISITO ESTRICTO: Filtrar el dataset global antes del match de texto
-        // Solo se permiten elementos tipo 'power', 'supercollection' o 'collection'
+        // ✅ FIX: Doble filtro — solo tipos válidos Y sin prefijo p1 (peones)
         const validTypes = ['power', 'supercollection', 'collection'];
-        const validDataset = allPowersList.filter(e => validTypes.includes(e.type));
+        const validDataset = allPowersList.filter(e => validTypes.includes(e.type) && !/^p1/i.test(e.name));
 
         if (validDataset.length === 0) { autocompleteList.style.display = 'none'; return; }
 
@@ -1391,7 +1377,6 @@
 
             await renderDashboard(powerData);
             
-            // Forzar actualización de idioma en elementos renderizados
             updateLanguageUI();
 
         } catch (error) {
@@ -1646,7 +1631,6 @@
             }
             card.dataset.loaded = colName;
             
-            // Forzar actualización de idioma en los nuevos peones de colección si es necesario
             updateLanguageUI();
         } catch {
             loader.style.display = 'none';
@@ -1855,30 +1839,26 @@
                     group.appendChild(btnCopy);
                     grid.appendChild(group);
 
-                    // REGLA ESTRICTA DE CARGA 80 -> 80* -> 40 -> 40*
                     LOAD_QUEUE.push({
                         img,
                         url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_80`,
-                        noAutoFallback: true, // Desactiva la recursividad global por defecto
+                        noAutoFallback: true,
                         onFail: () => {
-                            // Intento 2: _80 normal falla -> _80 con asterisco (*)
                             LOAD_QUEUE.push({
                                 img,
                                 url: `https://gs.xat.com/a_(${encodeURIComponent(name)}*)_80`,
                                 noAutoFallback: true,
                                 onFail: () => {
-                                    // Intento 3: Ambos _80 fallan -> _40 normal
                                     LOAD_QUEUE.push({
                                         img,
                                         url: `https://gs.xat.com/a_(${encodeURIComponent(name)})_40`,
                                         noAutoFallback: true,
                                         onFail: () => { 
-                                            // Intento 4: _40 normal falla -> Último intento: _40 con asterisco (*)
                                             LOAD_QUEUE.push({
                                                 img,
                                                 url: `https://gs.xat.com/a_(${encodeURIComponent(name)}*)_40`,
                                                 noAutoFallback: true,
-                                                onFail: () => { img.style.display = 'none'; } // Falla total, ocultamos elemento
+                                                onFail: () => { img.style.display = 'none'; }
                                             });
                                             processQueue();
                                         }
